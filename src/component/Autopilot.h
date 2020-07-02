@@ -12,11 +12,11 @@ class Autopilot {
 public:
     std::string usersMac;
     std::string intruderMac;
-    XPLMDataRef lat, local_x;
+    XPLMDataRef lat, local_y;
     double data;
     Autopilot() {
         lat = XPLMFindDataRef("sim/flightmodel/position/latitude");
-        local_x = XPLMFindDataRef("sim/flightmodel/position/local_x");
+        local_y = XPLMFindDataRef("sim/flightmodel/position/local_y");
     }
     void getInformation() {
         data = XPLMGetDatad(lat);
@@ -25,10 +25,9 @@ public:
     }
 
     void writeToRef(double i) {
-        XPLMSetDatad(local_x, i);
+        double currentPosition = XPLMGetDatad(local_y);
+        double updatedPosition = currentPosition + i;
+        XPLMSetDatad(local_y, updatedPosition);
     }
-
-    //local_x is a double
-    //need a method that writes to a double
 
 };
