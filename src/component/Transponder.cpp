@@ -1,10 +1,11 @@
 #include "Transponder.h"
-
+#include "Autopilot.h"
 
 #pragma comment(lib,"WS2_32")
 
 std::string Transponder::macAddress_ = "";
 std::atomic<bool> Transponder::initialized_ = false;
+Autopilot autopilot;
 
 Transponder::Transponder(Aircraft* ac, 
 						concurrency::concurrent_unordered_map<std::string, Aircraft*> *intruders, 
@@ -199,6 +200,7 @@ DWORD Transponder::sendLocation()
 		XPLMDebugString("sendLocation buffer: ");
 		XPLMDebugString(buffer);
 		XPLMDebugString("\n");
+		autopilot.getInformation();
 
 		sendto(outSocket, (const char *)buffer, size, 0, (struct sockaddr *) &outgoing, sinlen);
 
