@@ -12,11 +12,15 @@ class Autopilot {
 public:
     std::string usersMac;
     std::string intruderMac;
-    XPLMDataRef lat, local_y;
+    XPLMDataRef lat, local_y, local_x, theta, position;
+    float q[4];
     double data;
     Autopilot() {
         lat = XPLMFindDataRef("sim/flightmodel/position/latitude");
         local_y = XPLMFindDataRef("sim/flightmodel/position/local_y");
+       // local_x = XPLMFindDataRef("sim/flightmodel/position/local_x");
+       // theta = XPLMFindDataRef("sim/flightmodel/position/theta");
+        position = XPLMFindDataRef("sim/flightmodel/position/q");
     }
     void getInformation() {
         data = XPLMGetDatad(lat);
@@ -28,6 +32,23 @@ public:
         double currentPosition = XPLMGetDatad(local_y);
         double updatedPosition = currentPosition + i;
         XPLMSetDatad(local_y, updatedPosition);
+    }
+    double getCurrentY() {
+        return XPLMGetDatad(local_y);
+    }
+    double getCurrentX() {
+        return XPLMGetDatad(local_x);
+    }
+    void getCurrentTheta() {
+        std::string s = std::to_string(XPLMGetDatad(theta));
+        s = s + "\n";
+        XPLMDebugString(s.c_str());
+        
+    }
+    void getCurrentPosition() {
+        int count = XPLMGetDatavf(position,q,0,4);
+        std::string values = std::to_string(q[0]) + std::to_string(q[1]) + std::to_string(q[2]) + std::to_string(q[3]) +"\n";
+        XPLMDebugString(values.c_str());
     }
 
 };

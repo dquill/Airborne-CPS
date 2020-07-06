@@ -44,6 +44,7 @@
 #include "XPLMNavigation.h"
 #include "XPLMDataAccess.h"
 #include "XPLMMenus.h"
+#include "XPLMProcessing.h"
 
 #include "component/VSpeedIndicatorGaugeRenderer.h"
 #include "component/ArtHorizGaugeRenderer.h"
@@ -84,6 +85,7 @@ XPLMDataRef	cockpitLightingRed, cockpitLightingGreen, cockpitLightingBlue;
 static XPLMWindowID	gExampleGaugePanelDisplayWindow = NULL;
 static int gaugeOnDisplay = 1;
 static bool debug = true;
+static bool apbool = false;
 
 // Declares Hotkey Toggles
 static XPLMHotKeyID gExampleGaugeHotKey = NULL;
@@ -128,6 +130,7 @@ static int	coordInRect(int x, int y, int l, int t, int r, int b) {
 /// Prototypes for callbacks etc.
 static void drawGLSceneForVSI();
 static void drawGLSceneForAH();
+float autopilotCallback(float elapsedMe, float elapsedSim, int counter, void* refcon);
 
 static int	gaugeDrawingCallback(XPLMDrawingPhase inPhase, int inIsBefore, void * inRefcon);
 static void exampleGaugeHotKey(void * refCon);
@@ -137,6 +140,7 @@ static void autopToggle(void * refCon);
 static void exampleGaugePanelWindowCallback(XPLMWindowID inWindowID, void * inRefcon);
 static void exampleGaugePanelKeyCallback(XPLMWindowID inWindowID, char inKey, XPLMKeyFlags inFlags, char inVirtualKey, void * inRefcon, int losingFocus);
 static int exampleGaugePanelMouseClickCallback(XPLMWindowID inWindowID, int x, int y, XPLMMouseStatus inMouse, void * inRefcon);
+
 
 static XPLMWindowID	gWindow = NULL;
 static int gClicked = 0;
@@ -159,6 +163,8 @@ static void myDrawWindowCallback(XPLMWindowID inWindowID, void * inRefcon);
 static void myHandleKeyCallback(XPLMWindowID inWindowID, char inKey, XPLMKeyFlags inFlags, char inVirtualKey, void * inRefcon, int losingFocus);
 
 static int myHandleMouseClickCallback(XPLMWindowID inWindowID, int x, int y, XPLMMouseStatus inMouse, void * inRefcon);
+
+float autopilotCallback(float elapsedMe, float elapsedSim, int counter, void* refcon);
 
 PLUGIN_API int XPluginStart(char * outName, char *	outSig, char *	outDesc) {
 	/// Handle cross platform differences
@@ -193,6 +199,10 @@ PLUGIN_API int XPluginStart(char * outName, char *	outSig, char *	outDesc) {
 	XPLMAppendMenuItem(menuID, "Toggle Autopilot", (void*) "autopilotToggle", 1);
 
 	/*End of Plugin Menu Creation*/
+
+
+	//Register a Flight Loop Call Back which constantly runs the autopilot
+	XPLMRegisterFlightLoopCallback(autopilotCallback,10,NULL);
 
 	/* Now we create a window.  We pass in a rectangle in left, top, right, bottom screen coordinates.  We pass in three callbacks. */
 	gWindow = XPLMCreateWindow(50, 600, 300, 200, 1, myDrawWindowCallback, myHandleKeyCallback, myHandleMouseClickCallback, NULL);
@@ -261,6 +271,7 @@ PLUGIN_API void	XPluginStop(void) {
 	XPLMUnregisterHotKey(hostileToggle);
 	XPLMUnregisterHotKey(autopilotToggle);
 	XPLMDestroyWindow(gExampleGaugePanelDisplayWindow);
+	XPLMUnregisterFlightLoopCallback(autopilotCallback, NULL);
 	
 
 	delete vsiGaugeRenderer;
@@ -337,6 +348,13 @@ int	gaugeDrawingCallback(XPLMDrawingPhase inPhase, int inIsBefore, void * inRefc
 	}
 	return 1;
 }
+float autopilotCallback(float elapsedMe, float elapsedSim, int counter, void* refcon) {
+	if (apbool) {
+		std::string s = "APFlightLoopCallback\n";
+		XPLMDebugString(s.c_str());
+	}
+	return -1;
+}
 
 
 /* This callback does not do any drawing as such.
@@ -408,7 +426,7 @@ void hostileGauge(void * refCon) {
 	ahGaugeRenderer->markHostile();
 }
 void autopToggle(void* refCon) {
-	autopilot.writeToRef(10.00);
+	apbool = !apbool;
 }
 
 /// Draws the textures that make up the gauge for the Vertical Speed Indicator
@@ -505,6 +523,11 @@ void myDrawWindowCallback(XPLMWindowID inWindowID, void * inRefcon) {
 		positionBuf[0] = '\0';
 		snprintf(positionBuf, 128, "Decider (-) vMin, vMax : %.3f, %.3f", vMin, vMax);
 		XPLMDrawString(color, left + 5, top - offsetYPxls, (char*)positionBuf, NULL, XPLM_FONT_BASIC);
+		offsetYPxls += 20;
+
+		positionBuf[0] = '\0';
+		snprintf(positionBuf, 128, "Yo (-) vMin, vMax : %.3f, %.3f", vMin, vMax);
+		XPLMDrawString(color, left + 5, top - offsetYPxls, (char*)positionBuf, NULL, XPLM_FONT_BASIC);
 
 	}
 }
@@ -537,4 +560,5 @@ void menuHandler(void * in_menu_ref, void * in_item_ref) {
 		XPLMCommandKeyStroke(XPLM_VK_F8);
 	}
 }
+
 
