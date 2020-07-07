@@ -109,6 +109,9 @@ static bool hostile = false;
 static char gVSIPluginDataFile[255];
 static char gAHPluginDataFile[255];
 
+// Declare Autopilot Callback Timer (seconds)
+static float interval = 3.0;
+
 Aircraft* userAircraft;
 
 VSIGaugeRenderer* vsiGaugeRenderer;
@@ -202,7 +205,7 @@ PLUGIN_API int XPluginStart(char * outName, char *	outSig, char *	outDesc) {
 
 
 	//Register a Flight Loop Call Back which constantly runs the autopilot
-	XPLMRegisterFlightLoopCallback(autopilotCallback,10,NULL);
+	XPLMRegisterFlightLoopCallback(autopilotCallback,interval, NULL);
 
 	/* Now we create a window.  We pass in a rectangle in left, top, right, bottom screen coordinates.  We pass in three callbacks. */
 	gWindow = XPLMCreateWindow(50, 600, 300, 200, 1, myDrawWindowCallback, myHandleKeyCallback, myHandleMouseClickCallback, NULL);
@@ -350,10 +353,9 @@ int	gaugeDrawingCallback(XPLMDrawingPhase inPhase, int inIsBefore, void * inRefc
 }
 float autopilotCallback(float elapsedMe, float elapsedSim, int counter, void* refcon) {
 	if (apbool) {
-		std::string s = "APFlightLoopCallback\n";
-		XPLMDebugString(s.c_str());
+		XPLMDebugString(autopilot.getCurrentPosition().c_str());
 	}
-	return -1;
+	return interval;
 }
 
 

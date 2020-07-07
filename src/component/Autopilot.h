@@ -45,10 +45,13 @@ public:
         XPLMDebugString(s.c_str());
         
     }
-    void getCurrentPosition() {
+
+    //Rseturns current position of plane in the form of a quaternion {x,y,z}
+    //These are local coordinates, not latitude/longitude/altitude
+    std::string getCurrentPosition() {
         int count = XPLMGetDatavf(position,q,0,4);
-        std::string values = std::to_string(q[0]) + std::to_string(q[1]) + std::to_string(q[2]) + std::to_string(q[3]) +"\n";
-        XPLMDebugString(values.c_str());
+        std::string values = "Quaternion Coordinates: "+ std::to_string(q[0]) + " " + std::to_string(q[1]) + " " + std::to_string(q[2]) + " " + std::to_string(q[3]) +"\n";
+        return values;
     }
 
 };
