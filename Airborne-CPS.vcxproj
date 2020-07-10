@@ -39,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\component\ArtHorizGaugeRenderer.h" />
+    <ClInclude Include="src\component\Autopilot.h" />
     <ClInclude Include="src\component\Decider.h" />
     <ClInclude Include="src\component\NASADecider.h" />
     <ClInclude Include="src\component\ResolutionConnection.h" />

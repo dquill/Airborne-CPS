@@ -110,7 +110,7 @@ static char gVSIPluginDataFile[255];
 static char gAHPluginDataFile[255];
 
 // Declare Autopilot Callback Timer (seconds)
-static float interval = 3.0;
+static float interval = 1.0;
 
 Aircraft* userAircraft;
 
@@ -352,9 +352,12 @@ int	gaugeDrawingCallback(XPLMDrawingPhase inPhase, int inIsBefore, void * inRefc
 	return 1;
 }
 float autopilotCallback(float elapsedMe, float elapsedSim, int counter, void* refcon) {
+	autopilot.getElevatorPitch();
+	
 	if (apbool) {
-		XPLMDebugString(autopilot.getCurrentPosition().c_str());
+		autopilot.setElevatorPitch();
 	}
+	
 	return interval;
 }
 
