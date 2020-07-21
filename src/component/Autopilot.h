@@ -7,90 +7,105 @@
 #include "XPLMMenus.h"
 #include <cassert>
 #include <cstring>
+#include <math.h>
 
 class Autopilot {
 public:
     std::string usersMac;
     std::string intruderMac;
-    XPLMDataRef lat, local_y, local_x, theta, position, r1, r2, elv_trim;
+    XPLMDataRef position, override_planepath, iairspeed;
+    XPLMDataRef theta, psi, phi;
     float q[4];
     float elv1[56], elv2[56];
     float elvPitch;
+    float pitch;
     double data;
     Autopilot() {
-        lat = XPLMFindDataRef("sim/flightmodel/position/latitude");
-        local_y = XPLMFindDataRef("sim/flightmodel/position/local_y");
-       // local_x = XPLMFindDataRef("sim/flightmodel/position/local_x");
-       // theta = XPLMFindDataRef("sim/flightmodel/position/theta");
         position = XPLMFindDataRef("sim/flightmodel/position/q");
-        r1 = XPLMFindDataRef("sim/flightmodel/controls/elv1_def");
-        r2 = XPLMFindDataRef("sim/flightmodel/controls/elv2_def");
-        elv_trim = XPLMFindDataRef("sim/flightmodel/controls/elv_trim");
-    }
-    void getInformation() {
-        data = XPLMGetDatad(lat);
-        std::string info = "AutoPilot Latitude: " + std::to_string(data) + "\n";
-        XPLMDebugString(info.c_str());
+        theta = XPLMFindDataRef("sim/flightmodel/position/theta");
+        phi = XPLMFindDataRef("sim/flightmodel/position/phi");
+        psi = XPLMFindDataRef("sim/flightmodel/position/psi");
+        override_planepath = XPLMFindDataRef("sim/operation/override/override_planepath");
+        iairspeed = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed");
     }
 
-    void writeToRef(double i) {
-        double currentPosition = XPLMGetDatad(local_y);
-        double updatedPosition = currentPosition + i;
-        XPLMSetDatad(local_y, updatedPosition);
+    void getPosition() {
+        std::string s = "Theta: ["+ std::to_string(XPLMGetDataf(theta)) + "] - Phi: [" + std::to_string(XPLMGetDataf(phi)) + "] Psi: [" + std::to_string(XPLMGetDataf(psi)) + "] \n";
+        XPLMDebugString(s.c_str());
     }
-    double getCurrentY() {
-        return XPLMGetDatad(local_y);
-    }
-    double getCurrentX() {
-        return XPLMGetDatad(local_x);
-    }
+
     void getCurrentTheta() {
         std::string s = std::to_string(XPLMGetDatad(theta));
         s = s + "\n";
-        XPLMDebugString(s.c_str());
-        
+        XPLMDebugString(s.c_str());  
     }
 
-    //Rseturns current position of plane in the form of a quaternion {x,y,z}
+    //Returns current position of plane in the form of a quaternion {x,y,z}
     //These are local coordinates, not latitude/longitude/altitude
-    std::string getCurrentPosition() {
+    void getCurrentPosition() {
         int count = XPLMGetDatavf(position,q,0,4);
         std::string values = "Quaternion Coordinates: "+ std::to_string(q[0]) + " " + std::to_string(q[1]) + " " + std::to_string(q[2]) + " " + std::to_string(q[3]) +"\n";
-        return values;
-    }
-
-    void getRudderPosition() {
-        int count = XPLMGetDatavf(r1,elv1,0,56);
-        int count2 = XPLMGetDatavf(r2, elv2, 0, 56);
-
-        for (int i = 0; i < (sizeof(elv1) / sizeof(elv1[0])); i++) {
-            std::string value = "Float position at [" + std::to_string(i) + "]: " + std::to_string(elv1[i]) + "\n";
-            XPLMDebugString(value.c_str());
-        }
-      //  std::string values = "Rudder 1 data: " + std::to_string(elv1[0]) + " " + std::to_string(elv1[1]) + " " + std::to_string(elv1[2]) + " " + std::to_string(elv1[3]) + " " + std::to_string(elv1[4]) + "\n";
-    }
-
-    void changeRudderPosition() {
-        int count = XPLMGetDatavf(r1, elv1, 0, 56);
-        int count2 = XPLMGetDatavf(r2, elv2, 0, 56);
-        for (int i = 0; i < (sizeof(elv1) / sizeof(elv1[0])); i++) {
-            elv1[i] = elv1[i] + 0.05f;
-        }
-        for (int i = 0; i < (sizeof(elv2) / sizeof(elv2[0])); i++) {
-            elv2[i] = elv2[i] + 0.05f;
-        }
-        XPLMSetDatavf(r1, elv1, 0, 56);
-        XPLMSetDatavf(r2, elv2, 0, 56);
+        XPLMDebugString(values.c_str());
         
     }
 
-    void getElevatorPitch() {
-        std::string value = "Elevator Pitch:  "+ std::to_string(XPLMGetDataf(elv_trim)) + "\n";
-        XPLMDebugString(value.c_str());
+    void setCurrentPosition() {
+        int airspeedInterval = 40;
+        float thetaInterval = .1;
+        float phiInterval;
+        int count = XPLMGetDatavf(position, q, 0, 4);
+        if (XPLMGetDataf(XPLMFindDataRef("sim/flightmodel/position/phi")) > 0) {
+            phiInterval = -.1;
+        }
+        if (XPLMGetDataf(XPLMFindDataRef("sim/flightmodel/position/phi")) < 0) {
+            phiInterval = .1;
+        }
+
+        float roll = M_PI / 360 * (XPLMGetDataf(XPLMFindDataRef("sim/flightmodel/position/phi")) + phiInterval);  
+        float pitch = M_PI / 360 * (XPLMGetDataf(XPLMFindDataRef("sim/flightmodel/position/theta")) + thetaInterval);
+        float yaw = M_PI / 360 * XPLMGetDataf(XPLMFindDataRef("sim/flightmodel/position/psi"));
+        float o[4];
+        o[0] = cos(yaw) * cos(pitch) * cos(roll) + sin(yaw) * sin(pitch) * sin(roll);
+        o[1] = cos(yaw) * cos(pitch) * sin(roll) - sin(yaw) * sin(pitch) * cos(roll);
+        o[2] = cos(yaw) * sin(pitch) * cos(roll) + sin(yaw) * cos(pitch) * sin(roll);
+        o[3] = -cos(yaw) * sin(pitch) * sin(roll) + sin(yaw) * cos(pitch) * cos(roll);
+
+
+        //flight path must be disabled for this to work
+        //set flight model
+        XPLMSetDataf(phi, XPLMGetDataf(phi) + phiInterval);
+        XPLMSetDataf(theta, XPLMGetDataf(theta) + thetaInterval);
+        XPLMSetDataf(iairspeed, XPLMGetDataf(iairspeed) + airspeedInterval);
+        //set quaternion position
+        XPLMSetDatavf(position, o, 0, 4);
+    }
+    
+    void disableFlightPath() {
+        int path[20];
+        int count = XPLMGetDatavi(override_planepath, path, 0, 20);
+        path[0] = 1;
+        XPLMSetDatavi(override_planepath, path, 0, 20);
     }
 
-    void setElevatorPitch() {
-        XPLMSetDataf(elv_trim, (1.0f));
+    void enableFlightPath() {
+        int path[20];
+        int count = XPLMGetDatavi(override_planepath, path, 0, 20);
+        path[0] = 0;
+        XPLMSetDatavi(override_planepath, path, 0, 20);
     }
 
+    void flightPathSwitch() {
+        int path[20];
+        int count = XPLMGetDatavi(override_planepath, path, 0, 20);
+        if (path[0] == 1) {
+            path[0] = 0;
+        }
+        else {
+            path[0] = 1;
+        }
+        XPLMSetDatavi(override_planepath, path, 0, 20);
+    }
+
+
+   
 };

@@ -110,7 +110,7 @@ static char gVSIPluginDataFile[255];
 static char gAHPluginDataFile[255];
 
 // Declare Autopilot Callback Timer (seconds)
-static float interval = 1.0;
+static float interval = 1;
 
 Aircraft* userAircraft;
 
@@ -352,10 +352,11 @@ int	gaugeDrawingCallback(XPLMDrawingPhase inPhase, int inIsBefore, void * inRefc
 	return 1;
 }
 float autopilotCallback(float elapsedMe, float elapsedSim, int counter, void* refcon) {
-	autopilot.getElevatorPitch();
-	
+	autopilot.getPosition();
 	if (apbool) {
-		autopilot.setElevatorPitch();
+		autopilot.disableFlightPath();
+		autopilot.setCurrentPosition();
+		autopilot.enableFlightPath();
 	}
 	
 	return interval;
@@ -432,6 +433,16 @@ void hostileGauge(void * refCon) {
 }
 void autopToggle(void* refCon) {
 	apbool = !apbool;
+	//autopilot.flightPathSwitch();
+	std::string msg;
+	if (apbool) {
+		msg = "AutoPilot On \n";
+	}
+	else {
+		msg = "AutoPilot Off \n";
+	}
+
+	XPLMDebugString(msg.c_str());
 }
 
 /// Draws the textures that make up the gauge for the Vertical Speed Indicator
