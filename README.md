@@ -19,32 +19,23 @@ This project is a plugin for the Laminar Research X-Plane flight simulator, and 
 
 - The SDK for the plugin is included in the codebase, and can also be found [here](http://www.xsquawkbox.net/xpsdk/mediawiki/Main_Page).
 
-- On Windows, you will need these linker/input/AdditionalDependencies settings:
-  * glu32.lib
-  * glaux.lib
-  They should already be included.
+- Install the Github extension for Visual Studio: https://marketplace.visualstudio.com/items?itemName=GitHub.GitHubExtensionforVisualStudio
 
+- Open Visual Studio 2019 and select Clone or Checkout Code from the Get Started wizard
 
-- Open the Visual Studio project ExampleGauge, and change the project's C++ Linker folder locations, Dependency folder locations, and build   path to reflect your project's path structure. Browse to where respository is located and add the following to the project settings.
+- Get the web URL from the github page (green button, copy the URL it provides)
 
-  * General -> Output Directory
-    - X-Plane 10\Resources\plugins
-    
-  * C++ -> Additional Include Directories  
-    - Airborne-CPS\src
-    - Airborne-CPS\SDK\CHeaders
-    - Airborne-CPS\SDK\CHeaders\XPLM
-    - Airborne-CPS\SDK\CHeaders\Widgets
-    - Airborne-CPS\SDK\Delphi\XPLM
-    - Airborne-CPS\SDK\Delphi\Widgets
-    
-  * Linker -> Additional Library Dependencies
-    - Airborne-CPS\SDK\Libraries\Win
-    - Airborne-CPS\SDK\CHeaders\google\protobuf
-    - Airborne-CPS\Release\32
+- Select a location for your local copy, or accept the default that VS provides, and proceed to clone
+
+- Open Airbone-CPS.sln in the cloned repo (view is be default on the right side)
+
+- Set project to Release and x86, then build. Should build without problems. Compiled output will be found at [local_repo_path]\out\x86\AirborneCPS.pdg and .xpl
+    - these files need to go into X-Plane 10\Resources\plugins\ folder each time you build. 
 
 - Copy the included Images folder located in Specification to X-Plane 10\Resources\plugins and rename the Images folder to AirborneCPS
 - Copy the included situations folder located in Specification and replace the situation folder located at X-Plane 10\Output
+
+
 
 - Build plugin
     * Use Release and x86 currently.
