@@ -23,7 +23,8 @@
 
 class IntruderInstatiator
 {
-
+private:
+	static IntruderInstatiator* instance;
 
 	XPLMDataRef gLatitude = NULL;
 	XPLMDataRef gLongitude = NULL;
@@ -37,8 +38,6 @@ class IntruderInstatiator
 
 	XPLMMenuID gAcquireAircraftMenu;
 	int gAcquireAircraftSubMenuItem;
-
-	private IntruderInstatiator = NULL;
 
 	char* gpAircraft[4];
 	char gAircraftPath[4][256];
@@ -65,47 +64,20 @@ class IntruderInstatiator
 
 	LLA intruders[NUMINTRUDERS];
 
-
-
-	//*************************************************************************
-	// instance methods
-	// *******************************************************************************
-
-
-	private IntruderInstatiator::IntruderInstatiator() {
-		// make a new one
-		// save it in the instance declared above
+	IntruderInstatiator() {
 
 	}
 
-	public  IntruderInstatiator::getIntruderInstatiator() {
-		// check if instance is null
-				//if is call private constructor
-		// return the instance ;
+
+
+public:
+	static IntruderInstatiator *getIntruderInstatiator() {
+		if (!instance) {
+			instance = new IntruderInstatiator();
+		}
+		return instance;
 	}
 
-	//These are the methods from the class diagram, I just added them so I can remember
-	//to implement these things later - Meredith
-
-	void updateDrawnIntruders()
-	{
-		//
-	}
-
-	void addDrawnIntruder()
-	{
-		//
-	}
-
-	void removeDrawnIntruder()
-	{
-		//
-	}
-
-	void drawIntruder()
-	{
-		//
-	}
 };
 
 
