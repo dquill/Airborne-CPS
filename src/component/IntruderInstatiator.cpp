@@ -1,48 +1,45 @@
 #include "IntruderInstatiator.h"
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
 
 
-#include "XPLMPlugin.h"
-#include "XPLMDisplay.h"
-#include "XPLMGraphics.h"
-#include "XPLMCamera.h"
-#include "XPLMPlanes.h"
-#include "XPLMUtilities.h"
-#include "XPLMDataAccess.h"
-#include "XPLMProcessing.h"
-#include "XPLMMenus.h"
 
-#include "Aircraft.h"
-
-
-#include <gl\gl.h>
-#include <gl\glu.h>
-
-#define IGNOREDPARAMETER 1
-#define NUMINTRUDERS 4
 
 class IntruderInstatiator
 {
-private:
-	static IntruderInstatiator* instance;
+	// constructor
+	IntruderInstatiator::IntruderInstatiator() {
 
-	XPLMDataRef gLatitude = NULL;
-	XPLMDataRef gLongitude = NULL;
-	XPLMDataRef gElevation = NULL;
-	XPLMDataRef gPlaneX = NULL;
-	XPLMDataRef gPlaneY = NULL;
-	XPLMDataRef gPlaneZ = NULL;
-	XPLMDataRef gPlaneTheta = NULL;
-	XPLMDataRef gPlanePhi = NULL;
-	XPLMDataRef gPlanePsi = NULL;
+		// we will have diff menu item names, and these calls should go in AirbornCPS.cpp
+		//gAcquireAircraftSubMenuItem = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "AcquireAircraft", 0, IGNOREDPARAMETER);
+		//gAcquireAircraftMenu = XPLMCreateMenu("AcquireAircraft", XPLMFindPluginsMenu(), gAcquireAircraftSubMenuItem, AcquireAircraftMenuHandlerCallback, 0);
+		//XPLMAppendMenuItem(gAcquireAircraftMenu, "Acquire Planes", "Acquire Planes", IGNOREDPARAMETER);
+		//XPLMAppendMenuItem(gAcquireAircraftMenu, "Release Planes", "Release Planes", IGNOREDPARAMETER);
+		//XPLMAppendMenuItem(gAcquireAircraftMenu, "Load Aircraft", "Load Aircraft", IGNOREDPARAMETER);
 
-	XPLMMenuID gAcquireAircraftMenu;
-	int gAcquireAircraftSubMenuItem;
 
-	char* gpAircraft[4];
-	char gAircraftPath[4][256];
+		IntruderInstatiator::gLatitude = XPLMFindDataRef("sim/flightmodel/position/latitude");
+		IntruderInstatiator::gLongitude = XPLMFindDataRef("sim/flightmodel/position/longitude");
+		IntruderInstatiator::gElevation = XPLMFindDataRef("sim/flightmodel/position/elevation");
+		IntruderInstatiator::gPlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
+		IntruderInstatiator::gPlaneY = XPLMFindDataRef("sim/flightmodel/position/local_y");
+		IntruderInstatiator::gPlaneZ = XPLMFindDataRef("sim/flightmodel/position/local_z");
+		IntruderInstatiator::gPlaneTheta = XPLMFindDataRef("sim/flightmodel/position/theta");
+		IntruderInstatiator::gPlanePhi = XPLMFindDataRef("sim/flightmodel/position/phi");
+		IntruderInstatiator::gPlanePsi = XPLMFindDataRef("sim/flightmodel/position/psi");
+
+		// we might have to chain the callback
+		// put the direct callback function in AirborneCPS.cpp, and have
+		// it call our IntruderInstatiator objects callback
+		// also, this call will be in AirbornCPS.cpp as well
+		XPLMRegisterDrawCallback(AcquireAircraftDrawCallback, xplm_Phase_Airplanes, 0, NULL);
+	}
+
+
+	static IntruderInstatiator* IntruderInstatiator::getIntruderInstatiator() {
+		if (*instance == NULL) {
+			instance = new IntruderInstatiator();
+		}
+		return instance;
+	}
 
 	const double kFullPlaneDist = 5280.0 / 3.2 * 3.0;
 	static inline float sqr(float a) { return a * a; }
@@ -50,62 +47,85 @@ private:
 	{
 		return sqrt(sqr(x2 - x1) + sqr(y2 - y1) + sqr(z2 - z1));
 	}
-	void AcquireAircraftMenuHandlerCallback(void* inMenuRef, void* inItemRef);
-	float AcquireAircraftFlightLoopCB(float elapsedMe, float elapsedSim, int counter, void* refcon);
-	void AcquireAircraftPlanesAvailableCallback(void* inRefcon);
-	int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase,
-		int inIsBefore,
-		void* inRefcon);
-	void AcquireAircraft(void);
 
-	typedef struct LLA {
-		double latitude, longitude, altitude, x, y, z;
-	}LLA;
+	int IntruderInstatiator::AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase,int inIsBefore,void* inRefcon)
+	{
+		int planeCount;
+		double x, y, z, x1, y1, z1;
+
+		float distMeters, Latitude, Longitude, Elevation;
+		float Heading, Pitch, Roll;
+
+		int drawFullPlane;
+		int Index;
+
+		XPLMCountAircraft(&planeCount, 0, 0);
+
+		if (planeCount <= 1)
+			return 0;
+
+		XPLMCameraPosition_t cameraPos;
+
+		XPLMReadCameraPosition(&cameraPos);
+
+		//Latitude = XPLMGetDataf(gLatitude);
+		//Longitude = XPLMGetDataf(gLongitude);
+		//Elevation = XPLMGetDataf(gElevation);
+		//Pitch = XPLMGetDataf(gPlaneTheta);
+		//Roll = XPLMGetDataf(gPlanePhi);
+		//Heading = XPLMGetDataf(gPlanePsi);
+
+		//XPLMWorldToLocal(Latitude, Longitude, Elevation, &x, &y, &z);
+
+		for (Index = 1; Index < NUMINTRUDERS; Index++)
+		{
+			//x1 = x - (Index * 50.0);
+			//y1 = y;
+			//z1 = z + (Index * 50.0);
+
+			//distMeters = CalcDist3D(intruders[Index].x, intruders[Index].y, intruders[Index].z, cameraPos.x, cameraPos.y, cameraPos.z);
+			if (cameraPos.zoom != 0.0)
+				distMeters /= cameraPos.zoom;
+
+			drawFullPlane = distMeters < kFullPlaneDist;
+
+			float backAzimuth = 0;
+			if (Heading >= 180) {
+				backAzimuth = Heading - 180;
+			}
+			else {
+				backAzimuth = Heading + 180;
+			}
 
 
-	concurrency::concurrent_unordered_map<std::string, Aircraft*>* DrawnIntruders,
+			XPLMPlaneDrawState_t DrawState;
+			DrawState.structSize = sizeof(XPLMPlaneDrawState_t);
+			DrawState.gearPosition = 1;
+			DrawState.flapRatio = 1.0;
+			DrawState.spoilerRatio = 0;
+			DrawState.speedBrakeRatio = 0;
+			DrawState.slatRatio = 0;
+			DrawState.wingSweep = 0;
+			DrawState.thrust = 0;
+			DrawState.yokePitch = 0;
+			DrawState.yokeHeading = 0;
+			DrawState.yokeRoll = 0;
 
-	// constructor
-	IntruderInstatiator() {
-		// these are from the example's XPluginStart()
-		intruders[1] = { 47.523, 10.672, 3049.774, 0, 0, 0 };
-		intruders[2] = { 47.525 , 10.672, 3049.345, 0, 0, 0 };
-		intruders[3] = { 47.528 , 10.671, 3049.275, 0, 0, 0 };
-		//intruders[4] = { 47.524, 10.672, 3150.442, 0, 0, 0 };
-
-
-		strcpy(outName, "AcquireAircraft");
-		strcpy(outSig, "xplanesdk.SandyBarbour.AcquireAircraft");
-		strcpy(outDesc, "A plugin that controls aircraft.");
-
-		gAcquireAircraftSubMenuItem = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "AcquireAircraft", 0, IGNOREDPARAMETER);
-		gAcquireAircraftMenu = XPLMCreateMenu("AcquireAircraft", XPLMFindPluginsMenu(), gAcquireAircraftSubMenuItem, AcquireAircraftMenuHandlerCallback, 0);
-		XPLMAppendMenuItem(gAcquireAircraftMenu, "Acquire Planes", "Acquire Planes", IGNOREDPARAMETER);
-		XPLMAppendMenuItem(gAcquireAircraftMenu, "Release Planes", "Release Planes", IGNOREDPARAMETER);
-		XPLMAppendMenuItem(gAcquireAircraftMenu, "Load Aircraft", "Load Aircraft", IGNOREDPARAMETER);
-
-		gLatitude = XPLMFindDataRef("sim/flightmodel/position/latitude");
-		gLongitude = XPLMFindDataRef("sim/flightmodel/position/longitude");
-		gElevation = XPLMFindDataRef("sim/flightmodel/position/elevation");
-		gPlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
-		gPlaneY = XPLMFindDataRef("sim/flightmodel/position/local_y");
-		gPlaneZ = XPLMFindDataRef("sim/flightmodel/position/local_z");
-		gPlaneTheta = XPLMFindDataRef("sim/flightmodel/position/theta");
-		gPlanePhi = XPLMFindDataRef("sim/flightmodel/position/phi");
-		gPlanePsi = XPLMFindDataRef("sim/flightmodel/position/psi");
-
-		XPLMRegisterDrawCallback(AcquireAircraftDrawCallback, xplm_Phase_Airplanes, 0, NULL);
-	}
-
-
-
-public:
-	static IntruderInstatiator *getIntruderInstatiator() {
-		if (!instance) {
-			instance = new IntruderInstatiator();
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			//glTranslatef(intruders[Index].x, intruders[Index].y, intruders[Index].z);
+			glRotatef(backAzimuth, 0.0, -1.0, 0.0);
+			glRotatef(Pitch, 1.0, 0.0, 0.0);
+			glRotatef(Roll, 0.0, 0.0, -1.0);
+			//XPLMDrawAircraft(Index, (float)intruders[Index].x, (float)intruders[Index].y, (float)intruders[Index].z, Pitch, Roll, backAzimuth, drawFullPlane ? 1 : 0, &DrawState);
+			//ai++;
+			//if (ai > (planeCount - 1))
+			//	ai = 1;
+			glPopMatrix();
 		}
-		return instance;
+		return 1;
 	}
+
 
 };
 
