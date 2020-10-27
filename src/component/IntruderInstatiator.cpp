@@ -63,12 +63,38 @@ private:
 	}LLA;
 
 
-
-	LLA intruders[NUMINTRUDERS];
+	concurrency::concurrent_unordered_map<std::string, Aircraft*>* DrawnIntruders,
 
 	// constructor
 	IntruderInstatiator() {
-		// 
+		// these are from the example's XPluginStart()
+		intruders[1] = { 47.523, 10.672, 3049.774, 0, 0, 0 };
+		intruders[2] = { 47.525 , 10.672, 3049.345, 0, 0, 0 };
+		intruders[3] = { 47.528 , 10.671, 3049.275, 0, 0, 0 };
+		//intruders[4] = { 47.524, 10.672, 3150.442, 0, 0, 0 };
+
+
+		strcpy(outName, "AcquireAircraft");
+		strcpy(outSig, "xplanesdk.SandyBarbour.AcquireAircraft");
+		strcpy(outDesc, "A plugin that controls aircraft.");
+
+		gAcquireAircraftSubMenuItem = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "AcquireAircraft", 0, IGNOREDPARAMETER);
+		gAcquireAircraftMenu = XPLMCreateMenu("AcquireAircraft", XPLMFindPluginsMenu(), gAcquireAircraftSubMenuItem, AcquireAircraftMenuHandlerCallback, 0);
+		XPLMAppendMenuItem(gAcquireAircraftMenu, "Acquire Planes", "Acquire Planes", IGNOREDPARAMETER);
+		XPLMAppendMenuItem(gAcquireAircraftMenu, "Release Planes", "Release Planes", IGNOREDPARAMETER);
+		XPLMAppendMenuItem(gAcquireAircraftMenu, "Load Aircraft", "Load Aircraft", IGNOREDPARAMETER);
+
+		gLatitude = XPLMFindDataRef("sim/flightmodel/position/latitude");
+		gLongitude = XPLMFindDataRef("sim/flightmodel/position/longitude");
+		gElevation = XPLMFindDataRef("sim/flightmodel/position/elevation");
+		gPlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
+		gPlaneY = XPLMFindDataRef("sim/flightmodel/position/local_y");
+		gPlaneZ = XPLMFindDataRef("sim/flightmodel/position/local_z");
+		gPlaneTheta = XPLMFindDataRef("sim/flightmodel/position/theta");
+		gPlanePhi = XPLMFindDataRef("sim/flightmodel/position/phi");
+		gPlanePsi = XPLMFindDataRef("sim/flightmodel/position/psi");
+
+		XPLMRegisterDrawCallback(AcquireAircraftDrawCallback, xplm_Phase_Airplanes, 0, NULL);
 	}
 
 

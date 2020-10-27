@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="IntruderInstatiator.cpp" />
     <ClCompile Include="src\component\ArtHorizGaugeRenderer.cpp" />
     <ClCompile Include="src\component\Decider.cpp" />
+    <ClCompile Include="src\component\IntruderInstatiator.cpp" />
     <ClCompile Include="src\component\NASADecider.cpp" />
     <ClCompile Include="src\component\ResolutionConnection.cpp" />
     <ClCompile Include="src\component\Transponder.cpp" />
@@ -40,9 +40,9 @@
     <ClCompile Include="src\component\XBee.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IntruderInstatiator.h" />
     <ClInclude Include="src\component\ArtHorizGaugeRenderer.h" />
     <ClInclude Include="src\component\Decider.h" />
+    <ClInclude Include="src\component\IntruderInstatiator.h" />
     <ClInclude Include="src\component\NASADecider.h" />
     <ClInclude Include="src\component\ResolutionConnection.h" />
     <ClInclude Include="src\component\Transponder.h" />
