@@ -84,6 +84,28 @@ class IntruderInstatiator
 		// return the instance ;
 	}
 
+	//These are the methods from the class diagram, I just added them so I can remember
+	//to implement these things later - Meredith
+
+	void updateDrawnIntruders()
+	{
+		//
+	}
+
+	void addDrawnIntruder()
+	{
+		//
+	}
+
+	void removeDrawnIntruder()
+	{
+		//
+	}
+
+	void drawIntruder()
+	{
+		//
+	}
 };
 
 
