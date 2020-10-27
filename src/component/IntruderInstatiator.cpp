@@ -14,6 +14,8 @@
 #include "XPLMProcessing.h"
 #include "XPLMMenus.h"
 
+#include "Aircraft.h"
+
 
 #include <gl\gl.h>
 #include <gl\glu.h>
@@ -64,8 +66,9 @@ private:
 
 	LLA intruders[NUMINTRUDERS];
 
+	// constructor
 	IntruderInstatiator() {
-
+		// 
 	}
 
 
