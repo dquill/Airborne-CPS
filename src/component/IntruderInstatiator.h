@@ -45,15 +45,15 @@ class IntruderInstatiator
 private:
 	static IntruderInstatiator* instance;
 
-	XPLMDataRef IntruderInstatiator::gLatitude;
-	XPLMDataRef IntruderInstatiator::gLongitude;
-	XPLMDataRef IntruderInstatiator::gElevation;
-	XPLMDataRef IntruderInstatiator::gPlaneX;
-	XPLMDataRef IntruderInstatiator::gPlaneY;
-	XPLMDataRef IntruderInstatiator::gPlaneZ;
-	XPLMDataRef IntruderInstatiator::gPlaneTheta;
-	XPLMDataRef IntruderInstatiator::gPlanePhi;
-	XPLMDataRef IntruderInstatiator::gPlanePsi;
+	XPLMDataRef gLatitude;
+	XPLMDataRef gLongitude;
+	XPLMDataRef gElevation;
+	XPLMDataRef gPlaneX;
+	XPLMDataRef gPlaneY;
+	XPLMDataRef gPlaneZ;
+	XPLMDataRef gPlaneTheta;
+	XPLMDataRef gPlanePhi;
+	XPLMDataRef gPlanePsi;
 
 	XPLMMenuID gAcquireAircraftMenu;
 	int gAcquireAircraftSubMenuItem;
