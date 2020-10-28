@@ -3,7 +3,7 @@
 
 
 
-
+int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon);
 IntruderInstatiator* IntruderInstatiator::instance = NULL;
 
 // constructor
@@ -27,11 +27,8 @@ IntruderInstatiator::IntruderInstatiator() {
 	gPlanePhi = XPLMFindDataRef("sim/flightmodel/position/phi");
 	gPlanePsi = XPLMFindDataRef("sim/flightmodel/position/psi");
 
-	// we might have to chain the callback
-	// put the direct callback function in AirborneCPS.cpp, and have
-	// it call our IntruderInstatiator objects callback
-	// also, this call will be in AirbornCPS.cpp as well
-	//XPLMRegisterDrawCallback(AcquireAircraftDrawCallback, xplm_Phase_Airplanes, 0, NULL);
+
+	XPLMRegisterDrawCallback(AcquireAircraftDrawCallback, xplm_Phase_Airplanes, 0, NULL);
 }
 
 
@@ -49,7 +46,7 @@ static inline float CalcDist3D(float x1, float y1, float z1, float x2, float y2,
 	return sqrt(sqr(x2 - x1) + sqr(y2 - y1) + sqr(z2 - z1));
 }
 
-int IntruderInstatiator::AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
+int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
 {
 	int planeCount;
 	double x, y, z, x1, y1, z1;
@@ -69,12 +66,12 @@ int IntruderInstatiator::AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, i
 
 	XPLMReadCameraPosition(&cameraPos);
 
-	//Latitude = XPLMGetDataf(gLatitude);
-	//Longitude = XPLMGetDataf(gLongitude);
-	//Elevation = XPLMGetDataf(gElevation);
-	//Pitch = XPLMGetDataf(gPlaneTheta);
-	//Roll = XPLMGetDataf(gPlanePhi);
-	//Heading = XPLMGetDataf(gPlanePsi);
+	Latitude = XPLMGetDataf(gLatitude);
+	Longitude = XPLMGetDataf(gLongitude);
+	Elevation = XPLMGetDataf(gElevation);
+	Pitch = XPLMGetDataf(gPlaneTheta);
+	Roll = XPLMGetDataf(gPlanePhi);
+	Heading = XPLMGetDataf(gPlanePsi);
 
 	//XPLMWorldToLocal(Latitude, Longitude, Elevation, &x, &y, &z);
 
@@ -126,6 +123,8 @@ int IntruderInstatiator::AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, i
 	}
 	return 1;
 }
+
+
 
 
 

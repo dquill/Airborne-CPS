@@ -63,7 +63,7 @@ private:
 
 
 
-	concurrency::concurrent_unordered_map<std::string, Aircraft*>* DrawnIntruders;
+	concurrency::concurrent_unordered_map<std::string, Aircraft*>* DrawnIntrudersMap;
 	IntruderInstatiator();
 
 	static inline float sqr(float a);
@@ -72,7 +72,7 @@ private:
 
 public:
 	static IntruderInstatiator* getIntruderInstatiator();
-	int IntruderInstatiator::AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon);
+	
 	void IntruderInstatiator::AcquireAircraftMenuHandlerCallback(void* inMenuRef, void* inItemRef);
 	float IntruderInstatiator::AcquireAircraftFlightLoopCB(float elapsedMe, float elapsedSim, int counter, void* refcon);
 	void IntruderInstatiator::AcquireAircraftPlanesAvailableCallback(void* inRefcon);
