@@ -124,6 +124,43 @@ int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* 
 	return 1;
 }
 
+void updateDrawnIntruders()
+{
+	// I made this based off of what our class and sequence diagrams currently say, tell me if it isn't what you had in mind
+	// imIter is the intrudersMap iterator, dimIter is the drawnIntrudersMap iterator
+
+	// iterate through intrudersMap
+	for (concurrency::concurrent_unordered_map<std::string, Aircraft*>*::iterator imIter = intrudersMap.begin(); imIter != intrudersMap.end();)
+	{
+		//iterate through drawnIntrudersMap
+		concurrency::concurrent_unordered_map<std::string, Aircraft*>*::iterator dimIter = drawnIntrudersMap.find(imIter->first);
+
+		//add an intruder if it's not in drawnIntrudersMap
+		if (!dimIter)
+		{
+			addDrawnIntruder(imIter->second);
+		}
+		else
+		{
+			//here we would replace the information drawnIntrudersMap currently has about the aircraft with the information itrudersMap has about it
+			//should we create a method called updateIntruderLocation() or something that will do that and we call that method here? or should we just put all the code that does that here?
+		}
+	}
+
+	//this loop iterates through drawnIntrudersMap first, then through intrudersMap to see if we have any aircraft that are in drawnIntrudersMap but not in intrudersMap
+	//let me know if there's a better way to do this
+	for (concurrency::concurrent_unordered_map<std::string, Aircraft*>*::iterator dimIter = drawnIntrudersMap.begin(); dimIter != drawnIntrudersMap.end();)
+	{
+		concurrency::concurrent_unordered_map<std::string, Aircraft*>*::iterator imIter = intrudersMap.find(dimIter->first);
+
+		//remove an intruder if it's not in intrudersMap
+		if (!imIter)
+		{
+			removeDrawnIntruder(dimIter->second);
+		}
+	}
+}
+
 
 
 
