@@ -7,7 +7,7 @@ int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* 
 IntruderInstatiator* IntruderInstatiator::instance = NULL;
 
 // constructor
-IntruderInstatiator::IntruderInstatiator() {
+IntruderInstatiator::IntruderInstatiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap) {
 
 	// we will have diff menu item names, and these calls should go in AirbornCPS.cpp
 	//gAcquireAircraftSubMenuItem = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "AcquireAircraft", 0, IGNOREDPARAMETER);
@@ -16,6 +16,7 @@ IntruderInstatiator::IntruderInstatiator() {
 	//XPLMAppendMenuItem(gAcquireAircraftMenu, "Release Planes", "Release Planes", IGNOREDPARAMETER);
 	//XPLMAppendMenuItem(gAcquireAircraftMenu, "Load Aircraft", "Load Aircraft", IGNOREDPARAMETER);
 
+	concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap = intrudersMap;
 
 	gLatitude = XPLMFindDataRef("sim/flightmodel/position/latitude");
 	gLongitude = XPLMFindDataRef("sim/flightmodel/position/longitude");
@@ -32,9 +33,19 @@ IntruderInstatiator::IntruderInstatiator() {
 }
 
 
-IntruderInstatiator* IntruderInstatiator::getIntruderInstatiator() {
+// we need to pass a reference to the intrudersmap to the class so that we know where it is. 
+IntruderInstatiator* IntruderInstatiator::getIntruderInstatiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap) {
 	if (instance == NULL) { // why is it angry about this?
-		instance = new IntruderInstatiator();
+		instance = new IntruderInstatiator(intrudersMap);
+	}
+	return instance;
+}
+// for when we just want to call on our instance to do things, but don't have easy access to a pointer to the intruders map.
+// this function returns a pointer to the IntruderInstantiator intance if it has already be constructed.
+// Returns NULL if there is no instance yet.
+IntruderInstatiator* IntruderInstatiator::getIntruderInstatiator() {
+	if (instance == NULL) {
+		return NULL;
 	}
 	return instance;
 }
@@ -46,7 +57,8 @@ static inline float CalcDist3D(float x1, float y1, float z1, float x2, float y2,
 	return sqrt(sqr(x2 - x1) + sqr(y2 - y1) + sqr(z2 - z1));
 }
 
-int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
+// inner method for draw callback that has access to class variables
+int IntruderInstatiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
 {
 	int planeCount;
 	double x, y, z, x1, y1, z1;
@@ -124,16 +136,65 @@ int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* 
 	return 1;
 }
 
-void updateDrawnIntruders()
+int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
+{
+	IntruderInstatiator* ii_inst = IntruderInstatiator::getIntruderInstatiator();
+	if (ii_inst) {
+		return ii_inst->DrawCallback(inPhase, inIsBefore, inRefcon);
+	}
+	else {
+		return 1;
+	}
+	
+}
+
+void IntruderInstatiator::updateDrawnIntruders()
 {
 	// I made this based off of what our class and sequence diagrams currently say, tell me if it isn't what you had in mind
 	// imIter is the intrudersMap iterator, dimIter is the drawnIntrudersMap iterator
 
+	// What we really need to look at for this part is the Activity Diagram. I think when its all said and done, we 
+	// are going to be going back and changing those other diagrams, such as the class diagram, to reflect what 
+	// the code actually ends up being.
+
+	/* So the activity diagram says that we have some sort of recurring event, or outer loop. We are thinking maybe 
+	   registering a flight loop callback, or we could perhaps use the drawing callback, but i'm concerned that callback
+	   happens so often (once per frame) and doing all this in it might be too much. so maybe we will register a separate
+	   flight loop callback that happens at a slower interval. 
+
+	   
+	   Regardless of the implementation detail of that, there's an outer loop/callback. And inside that there are two
+	   for loops. One of them iterates through the intruders map, and adds records to the DrawnIntrudersMap as it determines
+	   is needed. The second for loop iterates through the DrawnIntrudersMap and deletes records from DrawnIntruders if they are 
+	   no longer in the intrudersMap. I think that actually needs to be **deletes records from the DrawnIntrudersMap if they are
+	   no longer in the intrudersMap or their threatclassificatoin is no longer >= TRAFFIC_ADVISORY**  but the activity diagram 
+	   currently doesn't test for threatclassification. 
+
+		   ********* I just thought of something. Our maps contain POINTERS to Aircraft objects, and those Aircraft already get their
+	   locations updated. Both maps contain pointers. This means that the first for loop in the activity diagram, the box that
+	   says Copy IntrudersMap[intruder] to drawnIntrudersMap[intruder] doesn't need to happen. That was in effect the updating 
+	   of a location. The location in the Aircraft object will already be updated, which means the data that is read from reading
+	   through the map is already updated. **************
+	   */
+
 	// iterate through intrudersMap
-	for (concurrency::concurrent_unordered_map<std::string, Aircraft*>*::iterator imIter = intrudersMap.begin(); imIter != intrudersMap.end();)
+
+	// but if you were looking to make an iterator, this is how:
+	concurrency::concurrent_unordered_map<std::string, Aircraft*> ::iterator iter;
+
+	// But for C11 and newer, we should be able to use auto iter : myMap like this:
+	for (auto iter : *this->intrudersMap) {
+
+	}
+
+	// as per SO post https://stackoverflow.com/questions/4844886/how-can-i-loop-through-a-c-map-of-maps
+
+	for (concurrency::concurrent_unordered_map<std::string, Aircraft*>*::iterator& imIter = intrudersMap.begin(); imIter != intrudersMap.end();)
 	{
-		//iterate through drawnIntrudersMap
-		concurrency::concurrent_unordered_map<std::string, Aircraft*>*::iterator dimIter = drawnIntrudersMap.find(imIter->first);
+
+
+		// don't iterate. Look up in 
+		drawnIntrudersMap.find(imIter->first);
 
 		//add an intruder if it's not in drawnIntrudersMap
 		if (!dimIter)
