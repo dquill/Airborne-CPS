@@ -40,10 +40,10 @@
 #define IGNOREDPARAMETER 1
 #define NUMINTRUDERS 4
 
-class IntruderInstatiator
+class IntruderInstantiator
 {
 private:
-	static IntruderInstatiator* instance;
+	static IntruderInstantiator* instance;
 
 	XPLMDataRef gLatitude;
 	XPLMDataRef gLongitude;
@@ -65,20 +65,23 @@ private:
 
 	concurrency::concurrent_unordered_map<std::string, Aircraft*>* drawnIntrudersMap;
 	concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap;
-	IntruderInstatiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>*);
+	IntruderInstantiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>*);
 
 	static inline float sqr(float a);
 	static inline float CalcDist3D(float x1, float y1, float z1, float x2, float y2, float z2);
 
 
 public:
-	static IntruderInstatiator* IntruderInstatiator::getIntruderInstatiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap);
-	static IntruderInstatiator* IntruderInstatiator::getIntruderInstatiator();
-	int IntruderInstatiator::DrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon);
-	void IntruderInstatiator::AcquireAircraftMenuHandlerCallback(void* inMenuRef, void* inItemRef);
-	float IntruderInstatiator::AcquireAircraftFlightLoopCB(float elapsedMe, float elapsedSim, int counter, void* refcon);
-	void IntruderInstatiator::AcquireAircraftPlanesAvailableCallback(void* inRefcon);
-	void IntruderInstatiator::AcquireAircraft(void);
-	void IntruderInstatiator::updateDrawnIntruders();
+	static IntruderInstantiator* IntruderInstantiator::getIntruderInstatiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap);
+	static IntruderInstantiator* IntruderInstantiator::getIntruderInstatiator();
+	int IntruderInstantiator::DrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon);
+	void IntruderInstantiator::AcquireAircraftMenuHandlerCallback(void* inMenuRef, void* inItemRef);
+	float IntruderInstantiator::AcquireAircraftFlightLoopCB(float elapsedMe, float elapsedSim, int counter, void* refcon);
+	void IntruderInstantiator::AcquireAircraftPlanesAvailableCallback(void* inRefcon);
+	void IntruderInstantiator::AcquireAircraft(void);
+	void IntruderInstantiator::updateDrawnIntruders();
+	void IntruderInstantiator::addDrawnIntruder(Aircraft*);
+	void IntruderInstantiator::removeDrawnIntruder(Aircraft*);
+	void IntruderInstantiator::drawIntruder(Aircraft*);
 };
 
