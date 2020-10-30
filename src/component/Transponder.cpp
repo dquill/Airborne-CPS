@@ -211,6 +211,7 @@ DWORD Transponder::processIntruder(std::string intruderID)
 		aircraft_->lock.lock();
 		ResolutionConnection* connection = new ResolutionConnection(macAddress_, intruder->id, intruder->ip, ResolutionConnection::K_TCP_PORT, aircraft_);
 		(*openConnections)[intruder->id] = connection;
+		return 0;
 	}
 
 	keepAliveMap_[intruder->id] = 10;  // what does 10 mean here? Why 10? 10 what? Why not 9 or 11000000? Magic number alert!

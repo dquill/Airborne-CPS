@@ -1,4 +1,18 @@
 #pragma once
+#ifndef WINVER
+// Define windows xp version
+#define WINVER 0x0501
+#endif
+
+#include "XPLMPlugin.h"
+#include "XPLMDisplay.h"
+#include "XPLMGraphics.h"
+#include "XPLMCamera.h"
+#include "XPLMPlanes.h"
+#include "XPLMUtilities.h"
+#include "XPLMDataAccess.h"
+#include "XPLMProcessing.h"
+#include "XPLMMenus.h"
 
 #pragma comment(lib, "IPHLPAPI.lib")
 #include <iphlpapi.h>
@@ -11,27 +25,16 @@
 #include <unordered_map>
 #include <queue>
 #include <mutex>
-#include <ctime>
+//#include <ctime>
 #include <condition_variable>
 #include <math.h>
-#include "data\Location.h"
-#include <queue>
-#include <mutex>
-#include <condition_variable>
 #include <concrt.h>                   // why did i have to explicityly include these
 #include <concurrent_unordered_map.h> // when transponder.h doesn't have to?
 
-#include "XPLMPlugin.h"
-#include "XPLMDisplay.h"
-#include "XPLMGraphics.h"
-#include "XPLMCamera.h"
-#include "XPLMPlanes.h"
-#include "XPLMUtilities.h"
-#include "XPLMDataAccess.h"
-#include "XPLMProcessing.h"
-#include "XPLMMenus.h"
+
 
 #include "data/Aircraft.h"
+#include "data\Location.h"
 #include <gl\gl.h>
 #include <gl\glu.h>
 
