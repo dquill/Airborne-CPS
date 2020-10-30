@@ -148,6 +148,16 @@ int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* 
 	
 }
 
+void updateDrawnIntrudersCallback() {
+	IntruderInstantiator* ii_inst = IntruderInstantiator::getIntruderInstatiator();
+	if (ii_inst) {
+		return ii_inst->updateDrawnIntruders();
+	}
+	else {
+		return;
+	}
+}
+
 void IntruderInstantiator::updateDrawnIntruders()
 {
 	//iterate through intrudersMap

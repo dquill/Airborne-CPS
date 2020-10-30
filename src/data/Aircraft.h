@@ -58,4 +58,7 @@ public:
 
 	ThreatClassification threatClassification = Aircraft::ThreatClassification::NON_THREAT_TRAFFIC;
 
+	// openGL local x, y and z coordinates used by IntruderInstantiator
+	double openGL_localx, openGL_localy, openGL_localz;
+
 };
