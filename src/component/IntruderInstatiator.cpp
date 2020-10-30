@@ -63,7 +63,7 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 	int planeCount;
 	double x, y, z, x1, y1, z1;
 
-	float distMeters, Latitude, Longitude, Elevation;
+	float distMeters;
 	float Heading, Pitch, Roll;
 
 	int drawFullPlane;
@@ -78,34 +78,35 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 
 	XPLMReadCameraPosition(&cameraPos);
 
-	Latitude = XPLMGetDataf(gLatitude);
-	Longitude = XPLMGetDataf(gLongitude);
-	Elevation = XPLMGetDataf(gElevation);
-	Pitch = XPLMGetDataf(gPlaneTheta);
-	Roll = XPLMGetDataf(gPlanePhi);
-	Heading = XPLMGetDataf(gPlanePsi);
 
-	//XPLMWorldToLocal(Latitude, Longitude, Elevation, &x, &y, &z);
 
-	for (Index = 1; Index < NUMINTRUDERS; Index++)
-	{
-		//x1 = x - (Index * 50.0);
-		//y1 = y;
-		//z1 = z + (Index * 50.0);
 
-		//distMeters = CalcDist3D(intruders[Index].x, intruders[Index].y, intruders[Index].z, cameraPos.x, cameraPos.y, cameraPos.z);
+	// iterate through at most planeCount of drawninterudersmap
+	int counter = 0;
+	for (auto const& iter : *this->drawnIntrudersMap) {
+		//convert the aircrafts LLA into OpenGL Local X, Y and Z coordinates
+		XPLMWorldToLocal(iter.second->positionCurrent.latitude.toDegrees(), 
+						iter.second->positionCurrent.longitude.toDegrees(),
+						iter.second->positionCurrent.altitude.toMeters(),  // do we want meters or feet?
+						&iter.second->openGL_localx,
+						&iter.second->openGL_localy,
+						&iter.second->openGL_localz);  
+
+
+
+		distMeters = CalcDist3D(iter.second->openGL_localx, iter.second->openGL_localy, iter.second->openGL_localz, cameraPos.x, cameraPos.y, cameraPos.z);
 		if (cameraPos.zoom != 0.0)
 			distMeters /= cameraPos.zoom;
 
 		drawFullPlane = distMeters < kFullPlaneDist;
 
 		float backAzimuth = 0;
-		if (Heading >= 180) {
-			backAzimuth = Heading - 180;
-		}
-		else {
-			backAzimuth = Heading + 180;
-		}
+		//if (Heading >= 180) {
+		//	backAzimuth = Heading - 180;
+		//}
+		//else {
+		//	backAzimuth = Heading + 180;
+		//}
 
 
 		XPLMPlaneDrawState_t DrawState;
@@ -123,7 +124,7 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		//glTranslatef(intruders[Index].x, intruders[Index].y, intruders[Index].z);
+		glTranslatef(iter.second->openGL_localx, iter.second->openGL_localy, iter.second->openGL_localz);
 		glRotatef(backAzimuth, 0.0, -1.0, 0.0);
 		glRotatef(Pitch, 1.0, 0.0, 0.0);
 		glRotatef(Roll, 0.0, 0.0, -1.0);

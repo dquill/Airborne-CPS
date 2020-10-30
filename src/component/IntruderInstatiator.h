@@ -35,6 +35,7 @@
 
 #include "data/Aircraft.h"
 #include "data\Location.h"
+#include "units/LLA.h"
 #include <gl\gl.h>
 #include <gl\glu.h>
 
