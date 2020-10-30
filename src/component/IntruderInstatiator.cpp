@@ -7,7 +7,7 @@ int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* 
 IntruderInstantiator* IntruderInstantiator::instance = NULL;
 
 // constructor
-IntruderInstantiator::IntruderInstantiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap) {
+IntruderInstantiator::IntruderInstantiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>* imap) {
 
 	// we will have diff menu item names, and these calls should go in AirbornCPS.cpp
 	//gAcquireAircraftSubMenuItem = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "AcquireAircraft", 0, IGNOREDPARAMETER);
@@ -16,7 +16,7 @@ IntruderInstantiator::IntruderInstantiator(concurrency::concurrent_unordered_map
 	//XPLMAppendMenuItem(gAcquireAircraftMenu, "Release Planes", "Release Planes", IGNOREDPARAMETER);
 	//XPLMAppendMenuItem(gAcquireAircraftMenu, "Load Aircraft", "Load Aircraft", IGNOREDPARAMETER);
 
-	concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap = intrudersMap;
+	intrudersMap = imap;
 
 	gLatitude = XPLMFindDataRef("sim/flightmodel/position/latitude");
 	gLongitude = XPLMFindDataRef("sim/flightmodel/position/longitude");
@@ -144,7 +144,7 @@ int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* 
 	}
 	else {
 		return 1;
-	}
+	} 
 	
 }
 
