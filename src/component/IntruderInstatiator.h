@@ -34,7 +34,7 @@
 
 
 #include "data/Aircraft.h"
-#include "data\Location.h"
+
 #include "units/LLA.h"
 #include <gl\gl.h>
 #include <gl\glu.h>
@@ -50,8 +50,7 @@ void AcquireAircraftMenuHandlerCallback(void* inMenuRef, void* inItemRef);
 void AcquireAircraft(void);
 void AcquireAircraftPlanesAvailableCallback(void* inRefcon);
 
-char* gpAircraft[4];
-char gAircraftPath[4][256];
+
 
 class IntruderInstantiator
 {

@@ -1,5 +1,9 @@
 #include "IntruderInstatiator.h"
 
+char* gpIIAircraft[4];
+char gIIAircraftPath[4][256];
+
+
 const double kFullPlaneDist = 5280.0 / 3.2 * 3.0;
 static inline float sqr(float a) { return a * a; }
 static inline float CalcDist3D(float x1, float y1, float z1, float x2, float y2, float z2)
@@ -60,6 +64,8 @@ IntruderInstantiator* IntruderInstantiator::getIntruderInstatiator() {
 // inner method for draw callback that has access to class variables
 int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
 {
+
+	updateDrawnIntruders();
 	int planeCount;
 	//double x, y, z, x1, y1, z1;
 
@@ -253,10 +259,10 @@ void AcquireAircraft(void)
 		XPLMGetNthAircraftModel(XPLM_USER_AIRCRAFT, FileName, AircraftPath);
 		for (Index = 1; Index < PlaneCount; Index++)
 		{	
-			strcpy(gAircraftPath[Index - 1], AircraftPath);
-			gpAircraft[Index - 1] = (char*)gAircraftPath[Index - 1];
+			strcpy(gIIAircraftPath[Index - 1], AircraftPath);
+			gpIIAircraft[Index - 1] = (char*)gIIAircraftPath[Index - 1];
 		}
-		if (XPLMAcquirePlanes((char**)&gpAircraft, AcquireAircraftPlanesAvailableCallback, NULL))
+		if (XPLMAcquirePlanes((char**)&gpIIAircraft, AcquireAircraftPlanesAvailableCallback, NULL))
 		{
 			OutputDebugString("Aircraft Acquired successfully\n");
 			XPLMDebugString("Aircraft Acquired successfully\n");
