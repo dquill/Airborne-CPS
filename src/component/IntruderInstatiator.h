@@ -44,6 +44,15 @@
 #define IGNOREDPARAMETER 1
 #define NUMINTRUDERS 4
 
+static inline float sqr(float a);
+static inline float CalcDist3D(float x1, float y1, float z1, float x2, float y2, float z2);
+void AcquireAircraftMenuHandlerCallback(void* inMenuRef, void* inItemRef);
+void AcquireAircraft(void);
+void AcquireAircraftPlanesAvailableCallback(void* inRefcon);
+
+char* gpAircraft[4];
+char gAircraftPath[4][256];
+
 class IntruderInstantiator
 {
 private:
@@ -62,8 +71,7 @@ private:
 	XPLMMenuID gAcquireAircraftMenu;
 	int gAcquireAircraftSubMenuItem;
 
-	char* gpAircraft[4];
-	char gAircraftPath[4][256];
+
 
 
 
@@ -71,8 +79,7 @@ private:
 	concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap;
 	IntruderInstantiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>*);
 
-	static inline float sqr(float a);
-	static inline float CalcDist3D(float x1, float y1, float z1, float x2, float y2, float z2);
+
 
 
 public:
@@ -86,6 +93,6 @@ public:
 	void IntruderInstantiator::updateDrawnIntruders();
 	void IntruderInstantiator::addDrawnIntruder(Aircraft*);
 	void IntruderInstantiator::removeDrawnIntruder(Aircraft*);
-	void IntruderInstantiator::drawIntruder(Aircraft*);
+	
 };
 

@@ -50,6 +50,7 @@
 #include "component/ArtHorizGaugeRenderer.h"
 #include "component/Transponder.h"
 #include "component/NASADecider.h"
+#include "component/IntruderInstatiator.h"
 
 #include "XPWidgets.h"
 #include "XPStandardWidgets.h"

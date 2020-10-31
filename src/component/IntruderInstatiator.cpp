@@ -1,6 +1,11 @@
 #include "IntruderInstatiator.h"
 
-
+const double kFullPlaneDist = 5280.0 / 3.2 * 3.0;
+static inline float sqr(float a) { return a * a; }
+static inline float CalcDist3D(float x1, float y1, float z1, float x2, float y2, float z2)
+{
+	return sqrt(sqr(x2 - x1) + sqr(y2 - y1) + sqr(z2 - z1));
+}
 
 
 int AcquireAircraftDrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon);
@@ -50,18 +55,13 @@ IntruderInstantiator* IntruderInstantiator::getIntruderInstatiator() {
 	return instance;
 }
 
-const double kFullPlaneDist = 5280.0 / 3.2 * 3.0;
-static inline float sqr(float a) { return a * a; }
-static inline float CalcDist3D(float x1, float y1, float z1, float x2, float y2, float z2)
-{
-	return sqrt(sqr(x2 - x1) + sqr(y2 - y1) + sqr(z2 - z1));
-}
+
 
 // inner method for draw callback that has access to class variables
 int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
 {
 	int planeCount;
-	double x, y, z, x1, y1, z1;
+	//double x, y, z, x1, y1, z1;
 
 	float distMeters;
 	float Heading, Pitch, Roll;
@@ -78,11 +78,13 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 
 	XPLMReadCameraPosition(&cameraPos);
 
-
+	Pitch = XPLMGetDataf(gPlaneTheta);
+	Roll = XPLMGetDataf(gPlanePhi);
 
 
 	// iterate through at most planeCount of drawninterudersmap
 	int counter = 0;
+	int idx = 1;
 	for (auto const& iter : *this->drawnIntrudersMap) {
 		//convert the aircrafts LLA into OpenGL Local X, Y and Z coordinates
 		XPLMWorldToLocal(iter.second->positionCurrent.latitude.toDegrees(), 
@@ -128,10 +130,12 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 		glRotatef(backAzimuth, 0.0, -1.0, 0.0);
 		glRotatef(Pitch, 1.0, 0.0, 0.0);
 		glRotatef(Roll, 0.0, 0.0, -1.0);
-		//XPLMDrawAircraft(Index, (float)intruders[Index].x, (float)intruders[Index].y, (float)intruders[Index].z, Pitch, Roll, backAzimuth, drawFullPlane ? 1 : 0, &DrawState);
-		//ai++;
-		//if (ai > (planeCount - 1))
-		//	ai = 1;
+
+		// we need to keep track of an airplane index
+		XPLMDrawAircraft(idx, (float)iter.second->openGL_localx, (float)iter.second->openGL_localy, (float)iter.second->openGL_localz, Pitch, Roll, backAzimuth, drawFullPlane ? 1 : 0, &DrawState);
+		idx++;
+		if (idx > (planeCount - 1))
+			idx = 1;
 		glPopMatrix();
 	}
 	return 1;
@@ -198,11 +202,7 @@ void IntruderInstantiator::updateDrawnIntruders()
 			//also remove it if its threat classification is < TRAFFIC_ADVISORY now
 			removeDrawnIntruder(iter->second);
 		}
-		else
-		{
-			//draw each aircraft in drawnIntrudersMap that wasn't removed
-			drawIntruder(iter->second);
-		}
+
 	}
 }
 
@@ -218,9 +218,61 @@ void IntruderInstantiator::removeDrawnIntruder(Aircraft* intruder)
 	drawnIntrudersMap->unsafe_erase(intruder->id);
 }
 
-void IntruderInstantiator::drawIntruder(Aircraft* intruder)
+void AcquireAircraftMenuHandlerCallback(void* inMenuRef,void* inItemRef)
 {
-	//this is where we will tell X-Plane to draw the aircraft
+	char FileName[256], AircraftPath[256];
+
+	if (!strcmp((char*)inItemRef, "Acquire Planes"))
+	{
+		AcquireAircraft();
+	}
+
+	if (!strcmp((char*)inItemRef, "Release Planes"))
+	{
+		XPLMReleasePlanes();
+	}
+
+	if (!strcmp((char*)inItemRef, "Load Aircraft"))
+	{
+		XPLMGetNthAircraftModel(XPLM_USER_AIRCRAFT, FileName, AircraftPath);
+		XPLMSetAircraftModel(1, AircraftPath);
+		XPLMSetAircraftModel(2, AircraftPath);
+		XPLMSetAircraftModel(3, AircraftPath);
+	}
+}
+
+void AcquireAircraft(void)
+{
+	int PlaneCount;
+	int Index;
+	char FileName[256], AircraftPath[256];
+
+	XPLMCountAircraft(&PlaneCount, 0, 0);
+	if (PlaneCount > 1)
+	{
+		XPLMGetNthAircraftModel(XPLM_USER_AIRCRAFT, FileName, AircraftPath);
+		for (Index = 1; Index < PlaneCount; Index++)
+		{	
+			strcpy(gAircraftPath[Index - 1], AircraftPath);
+			gpAircraft[Index - 1] = (char*)gAircraftPath[Index - 1];
+		}
+		if (XPLMAcquirePlanes((char**)&gpAircraft, AcquireAircraftPlanesAvailableCallback, NULL))
+		{
+			OutputDebugString("Aircraft Acquired successfully\n");
+			XPLMDebugString("Aircraft Acquired successfully\n");
+		}
+		else
+		{
+			OutputDebugString("Aircraft not Acquired\n");
+		}
+	}
+}
+
+void AcquireAircraftPlanesAvailableCallback(void* inRefcon)
+{
+	OutputDebugString("AcquireAircraftPlanesAvailableCallback\n");
+	XPLMDebugString("AcquireAircraftPlanesAvailableCallback\n");
+	AcquireAircraft();
 }
 
 
