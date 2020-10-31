@@ -118,7 +118,7 @@ int XBeeHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1
 int	XBeePortNumHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);
 int XBeeRoutingCheckboxHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);
 void GenerateComPortList();
- 
+XPLMFlightLoop_f DrawIntrudersFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter, void* inRefcon));
 char XBeeCOMPortList[MAX_COMPORT][MAX_DEVICE_PATH] = { {'\0'} };
 
 char XBeeInstructionText[XB_INTRUCTIONS_NUMLINES][XB_INSTRUCTIONS_LINELENGTH] = {   
@@ -152,6 +152,7 @@ AHGaugeRenderer* ahGaugeRenderer;
 concurrency::concurrent_unordered_map<std::string, Aircraft*> intrudingAircraft;
 concurrency::concurrent_unordered_map<std::string, ResolutionConnection*> openConnections;
 Transponder* transponder;
+IntruderInstantiator* intruderInstantiator;
 
 Decider* decider;
 
@@ -199,97 +200,113 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc) {
 	/// Handle cross platform differences
 #if IBM
 	char* pVSIFileName = "Resources\\Plugins\\AirborneCPS\\Vertical_Speed_Indicator\\";
-	char* pAHFileName = "Resources\\Plugins\\AirborneCPS\\Artificial_Horizon\\";
+char* pAHFileName = "Resources\\Plugins\\AirborneCPS\\Artificial_Horizon\\";
 #elif LIN
-	char* pVSIFileName = "Resources/plugins/AirborneCPS/Vertical_Speed_Indicator/";
-	char* pAHFileName = "Resources/plugins/AirborneCPS/Artificial_Horizon/";
+char* pVSIFileName = "Resources/plugins/AirborneCPS/Vertical_Speed_Indicator/";
+char* pAHFileName = "Resources/plugins/AirborneCPS/Artificial_Horizon/";
 #else
-	char* pVSIFileName = "Resources:Plugins:AirborneCPS:Vertical_Speed_Indicator:";
-	char* pAHFileName = "Resources:Plugins:AirborneCPS:Artificial_Horizon:";
+char* pVSIFileName = "Resources:Plugins:AirborneCPS:Vertical_Speed_Indicator:";
+char* pAHFileName = "Resources:Plugins:AirborneCPS:Artificial_Horizon:";
 #endif
-	/// Setup texture file locations
-	XPLMGetSystemPath(gVSIPluginDataFile);
-	strcat(gVSIPluginDataFile, pVSIFileName);
+/// Setup texture file locations
+XPLMGetSystemPath(gVSIPluginDataFile);
+strcat(gVSIPluginDataFile, pVSIFileName);
 
-	XPLMGetSystemPath(gAHPluginDataFile);
-	strcat(gAHPluginDataFile, pAHFileName);
-
-
-	strcpy(outName, "AirborneCPS");
-	strcpy(outSig, "AirborneCPS");
-	strcpy(outDesc, "A plug-in for displaying several TCAS gauges.");
-
-	/*Start of Plugin Menu Creation*/
-	menuContainerID = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "Airborne-CPS", 0, 0);					 
-	menuID = XPLMCreateMenu("Airborne CPS", XPLMFindPluginsMenu(), menuContainerID, MenuHandler, NULL);  
-
-	XPLMAppendMenuItem(menuID, "Toggle CPS", (void*)"exampleGaugeHotkey", 1);
-	XPLMAppendMenuItem(menuID, "Toggle Hostile", (void*)"hostileToggle", 1);
-	XPLMAppendMenuItem(menuID, "Toggle Debug", (void*)"debugToggle", 1);
-	XPLMAppendMenuItem(menuID, "XBee Config", (void*)XBEE_CONFIG_MENU, 1);
-
-	gXBeeMenuItem = 0;
-
-	/*End of Plugin Menu Creation*/
-
-	/* Now we create a window.  We pass in a rectangle in left, top, right, bottom screen coordinates.  We pass in three callbacks. */
-	gWindow = XPLMCreateWindow(50, 600, 300, 200, 1, myDrawWindowCallback, myHandleKeyCallback, myHandleMouseClickCallback, NULL);
-
-	/// Register so that our gauge is drawing during the Xplane gauge phase
-	XPLMRegisterDrawCallback(gaugeDrawingCallback, XPLM_PHASE_GAUGES, 0, NULL);
-
-	/// Create our window, setup datarefs and register our hotkey.
-	gExampleGaugePanelDisplayWindow = XPLMCreateWindow(1024, 256, 1280, 0, 1, exampleGaugePanelWindowCallback, exampleGaugePanelKeyCallback, exampleGaugePanelMouseClickCallback, NULL);
-
-	vertSpeedRef = XPLMFindDataRef("sim/cockpit2/gauges/indicators/vvi_fpm_pilot");
-
-	latitudeRef = XPLMFindDataRef("sim/flightmodel/position/latitude");
-	longitudeRef = XPLMFindDataRef("sim/flightmodel/position/longitude");
-	altitudeRef = XPLMFindDataRef("sim/flightmodel/position/elevation");
-
-	headingTrueMagDegRef = XPLMFindDataRef("sim/flightmodel/position/mag_psi");
-	headingTrueNorthDegRef = XPLMFindDataRef("sim/flightmodel/position/true_psi");
-
-	trueAirspeedRef = XPLMFindDataRef("sim/flightmodel/position/true_airspeed");
-	indAirspeedRef = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed");
-
-	thetaRef = XPLMFindDataRef("sim/flightmodel/position/theta");
-	phiRef = XPLMFindDataRef("sim/flightmodel/position/phi");
-
-	cockpitLightingRed = XPLMFindDataRef("sim/graphics/misc/cockpit_light_level_r");
-	cockpitLightingGreen = XPLMFindDataRef("sim/graphics/misc/cockpit_light_level_g");
-	cockpitLightingBlue = XPLMFindDataRef("sim/graphics/misc/cockpit_light_level_b");
-
-	//Assign keybinds for hotkeys
-	debugToggle = XPLMRegisterHotKey(XPLM_VK_F8, xplm_DownFlag, "F8", debugWindow, NULL);
-	gExampleGaugeHotKey = XPLMRegisterHotKey(XPLM_VK_F9, xplm_DownFlag, "F9", exampleGaugeHotKey, NULL);
-	hostileToggle = XPLMRegisterHotKey(XPLM_VK_F10, xplm_DownFlag, "F10", hostileGauge, NULL);
-
-	Transponder::initNetworking();
-	std::string myMac = Transponder::getHardwareAddress();
+XPLMGetSystemPath(gAHPluginDataFile);
+strcat(gAHPluginDataFile, pAHFileName);
 
 
+strcpy(outName, "AirborneCPS");
+strcpy(outSig, "AirborneCPS");
+strcpy(outDesc, "A plug-in for displaying several TCAS gauges.");
 
-	LLA currentPos = LLA::ZERO;
-	userAircraft = new Aircraft(myMac, "127.0.0.1", currentPos, Angle::ZERO, Velocity::ZERO, Angle::ZERO, Angle::ZERO);
-	std::chrono::milliseconds msSinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-	userAircraft->positionCurrentTime = msSinceEpoch;
-	userAircraft->positionOldTime = msSinceEpoch;
+/*Start of Plugin Menu Creation*/
+menuContainerID = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "Airborne-CPS", 0, 0);
+menuID = XPLMCreateMenu("Airborne CPS", XPLMFindPluginsMenu(), menuContainerID, MenuHandler, NULL);
 
-	decider = new NASADecider(userAircraft, &openConnections);
+XPLMAppendMenuItem(menuID, "Toggle CPS", (void*)"exampleGaugeHotkey", 1);
+XPLMAppendMenuItem(menuID, "Toggle Hostile", (void*)"hostileToggle", 1);
+XPLMAppendMenuItem(menuID, "Toggle Debug", (void*)"debugToggle", 1);
+XPLMAppendMenuItem(menuID, "XBee Config", (void*)XBEE_CONFIG_MENU, 1);
+XPLMAppendMenuItem(menuID, "Draw Intruders", (void*)"Draw Intruders", 1);
+XPLMAppendMenuItem(menuID, "Stop Drawing Intruders", (void*)"Stop Drawing Intruders", 1);
 
-	vsiGaugeRenderer = new VSIGaugeRenderer(gVSIPluginDataFile, decider, userAircraft, &intrudingAircraft);
-	vsiGaugeRenderer->loadTextures();
+gXBeeMenuItem = 0;
 
-	ahGaugeRenderer = new AHGaugeRenderer(gAHPluginDataFile, decider, userAircraft, &intrudingAircraft);
-	ahGaugeRenderer->loadTextures();
+/*End of Plugin Menu Creation*/
 
-	// start broadcasting location, and listening for aircraft
-	transponder = new Transponder(userAircraft, &intrudingAircraft, &openConnections, decider);
-	transponder->initXBee(3);  // ******* get this value from the Menu ************
-	transponder->start();
+/* Now we create a window.  We pass in a rectangle in left, top, right, bottom screen coordinates.  We pass in three callbacks. */
+gWindow = XPLMCreateWindow(50, 600, 300, 200, 1, myDrawWindowCallback, myHandleKeyCallback, myHandleMouseClickCallback, NULL);
 
-	return 1;
+/// Register so that our gauge is drawing during the Xplane gauge phase
+XPLMRegisterDrawCallback(gaugeDrawingCallback, XPLM_PHASE_GAUGES, 0, NULL);
+
+/// Create our window, setup datarefs and register our hotkey.
+gExampleGaugePanelDisplayWindow = XPLMCreateWindow(1024, 256, 1280, 0, 1, exampleGaugePanelWindowCallback, exampleGaugePanelKeyCallback, exampleGaugePanelMouseClickCallback, NULL);
+
+vertSpeedRef = XPLMFindDataRef("sim/cockpit2/gauges/indicators/vvi_fpm_pilot");
+
+latitudeRef = XPLMFindDataRef("sim/flightmodel/position/latitude");
+longitudeRef = XPLMFindDataRef("sim/flightmodel/position/longitude");
+altitudeRef = XPLMFindDataRef("sim/flightmodel/position/elevation");
+
+headingTrueMagDegRef = XPLMFindDataRef("sim/flightmodel/position/mag_psi");
+headingTrueNorthDegRef = XPLMFindDataRef("sim/flightmodel/position/true_psi");
+
+trueAirspeedRef = XPLMFindDataRef("sim/flightmodel/position/true_airspeed");
+indAirspeedRef = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed");
+
+thetaRef = XPLMFindDataRef("sim/flightmodel/position/theta");
+phiRef = XPLMFindDataRef("sim/flightmodel/position/phi");
+
+cockpitLightingRed = XPLMFindDataRef("sim/graphics/misc/cockpit_light_level_r");
+cockpitLightingGreen = XPLMFindDataRef("sim/graphics/misc/cockpit_light_level_g");
+cockpitLightingBlue = XPLMFindDataRef("sim/graphics/misc/cockpit_light_level_b");
+
+//Assign keybinds for hotkeys
+debugToggle = XPLMRegisterHotKey(XPLM_VK_F8, xplm_DownFlag, "F8", debugWindow, NULL);
+gExampleGaugeHotKey = XPLMRegisterHotKey(XPLM_VK_F9, xplm_DownFlag, "F9", exampleGaugeHotKey, NULL);
+hostileToggle = XPLMRegisterHotKey(XPLM_VK_F10, xplm_DownFlag, "F10", hostileGauge, NULL);
+
+Transponder::initNetworking();
+std::string myMac = Transponder::getHardwareAddress();
+
+
+
+LLA currentPos = LLA::ZERO;
+userAircraft = new Aircraft(myMac, "127.0.0.1", currentPos, Angle::ZERO, Velocity::ZERO, Angle::ZERO, Angle::ZERO);
+std::chrono::milliseconds msSinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+userAircraft->positionCurrentTime = msSinceEpoch;
+userAircraft->positionOldTime = msSinceEpoch;
+
+decider = new NASADecider(userAircraft, &openConnections);
+
+vsiGaugeRenderer = new VSIGaugeRenderer(gVSIPluginDataFile, decider, userAircraft, &intrudingAircraft);
+vsiGaugeRenderer->loadTextures();
+
+ahGaugeRenderer = new AHGaugeRenderer(gAHPluginDataFile, decider, userAircraft, &intrudingAircraft);
+ahGaugeRenderer->loadTextures();
+
+// start broadcasting location, and listening for aircraft
+transponder = new Transponder(userAircraft, &intrudingAircraft, &openConnections, decider);
+transponder->initXBee(3);  // ******* get this value from the Menu ************
+transponder->start();
+intruderInstantiator = IntruderInstantiator::getIntruderInstatiator(&intrudingAircraft);
+XPLMRegisterFlightLoopCallback(DrawIntrudersFlightLoopCallback, 0.1, (void*)1);
+
+return 1;
+}
+
+XPLMFlightLoop_f DrawIntrudersFlightLoopCallback(float inElapsedSinceLastCall,
+												float inElapsedTimeSinceLastFlightLoop,
+												int inCounter,
+													void* inRefcon)  {
+	IntruderInstantiator* ii_temp = IntruderInstantiator::getIntruderInstatiator();
+	if (ii_temp != NULL) {
+		ii_temp->updateDrawnIntruders();
+		return (float)1;
+	}
+
 }
 
 PLUGIN_API void	XPluginStop(void) {
@@ -586,6 +603,15 @@ void MenuHandler(void* in_menu_ref, void* in_item_ref) {
 			if (!XPIsWidgetVisible(XBeeWidget))
 				XPShowWidget(XBeeWidget);
 		}
+	}
+	if (!strcmp((char*)in_item_ref, "Draw Intruders"))
+	{
+		AcquireAircraft();
+	}
+
+	if (!strcmp((char*)in_item_ref, "Stop Drawing Intruders"))
+	{
+		XPLMReleasePlanes();
 	}
 }
 
