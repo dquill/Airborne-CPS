@@ -65,7 +65,7 @@ IntruderInstantiator* IntruderInstantiator::getIntruderInstatiator() {
 int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
 {
 
-	updateDrawnIntruders();
+	//updateDrawnIntruders();
 	int planeCount;
 	//double x, y, z, x1, y1, z1;
 
@@ -91,16 +91,20 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 	// iterate through at most planeCount of drawninterudersmap
 	int counter = 0;
 	int idx = 1;
-	for (auto const& iter : *this->drawnIntrudersMap) {
+	for (auto const& iter : this->drawnIntrudersMap) {
+
+		Aircraft* intruder = iter.second;
+		intruder->lock.lock(); // must lock this before writing to it
+
 		//convert the aircrafts LLA into OpenGL Local X, Y and Z coordinates
-		XPLMWorldToLocal(iter.second->positionCurrent.latitude.toDegrees(), 
-						iter.second->positionCurrent.longitude.toDegrees(),
-						iter.second->positionCurrent.altitude.toMeters(),  // do we want meters or feet?
-						&iter.second->openGL_localx,
-						&iter.second->openGL_localy,
-						&iter.second->openGL_localz);  
+		XPLMWorldToLocal(intruder->positionCurrent.latitude.toDegrees(),
+						 intruder->positionCurrent.longitude.toDegrees(),
+						 intruder->positionCurrent.altitude.toMeters(), 
+						&intruder->openGL_localx,
+						&intruder->openGL_localy,
+						&intruder->openGL_localz);
 
-
+		intruder->lock.unlock();  // unlock the Aircraft object
 
 		distMeters = CalcDist3D(iter.second->openGL_localx, iter.second->openGL_localy, iter.second->openGL_localz, cameraPos.x, cameraPos.y, cameraPos.z);
 		if (cameraPos.zoom != 0.0)
@@ -137,8 +141,8 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 		glRotatef(Pitch, 1.0, 0.0, 0.0);
 		glRotatef(Roll, 0.0, 0.0, -1.0);
 
-		// we need to keep track of an airplane index
-		XPLMDrawAircraft(idx, (float)iter.second->openGL_localx, (float)iter.second->openGL_localy, (float)iter.second->openGL_localz, Pitch, Roll, backAzimuth, drawFullPlane ? 1 : 0, &DrawState);
+		// we need to keep track of an airplane index, not sure if this is the right way but lets try it
+		XPLMDrawAircraft(idx, (float)intruder->openGL_localx, (float)intruder->openGL_localy, (float)intruder->openGL_localz, Pitch, Roll, backAzimuth, drawFullPlane ? 1 : 0, &DrawState);
 		idx++;
 		if (idx > (planeCount - 1))
 			idx = 1;
@@ -174,13 +178,14 @@ void IntruderInstantiator::updateDrawnIntruders()
 	//iterate through intrudersMap
 	for (auto iter : *this->intrudersMap)
 	{
+		 
 		//if threat classification of aircraft >= TRAFFIC_ADVISORY
 		if (iter.second->threatClassification >= Aircraft::ThreatClassification::TRAFFIC_ADVISORY)
 		{
 			//look for the aircraft in drawnIntrudersMap
-			auto foundAircraft = this->drawnIntrudersMap->find(iter.first);
+			auto foundAircraft = drawnIntrudersMap.find(iter.first);
 
-			if (foundAircraft == drawnIntrudersMap->end())
+			if (foundAircraft == drawnIntrudersMap.end())
 			{
 				//add it to drawnIntrudersMap if it's not in there
 				addDrawnIntruder(iter.second);
@@ -189,7 +194,7 @@ void IntruderInstantiator::updateDrawnIntruders()
 	}
 
 	//iterate through drawnIntrudersMap
-	for (auto iter = drawnIntrudersMap->cbegin(), next_iter = iter; iter != drawnIntrudersMap->cend();
+	for (auto iter = drawnIntrudersMap.cbegin(), next_iter = iter; iter != drawnIntrudersMap.cend();
 		iter = next_iter)
 	{
 		//store next interator in case we delete the current one
@@ -215,37 +220,15 @@ void IntruderInstantiator::updateDrawnIntruders()
 void IntruderInstantiator::addDrawnIntruder(Aircraft* intruder)
 {
 	//add the intruder to drawnIntrudersMap
-	(*drawnIntrudersMap)[intruder->id] = intruder;
+	(drawnIntrudersMap)[intruder->id] = intruder;
 }
 
 void IntruderInstantiator::removeDrawnIntruder(Aircraft* intruder)
 {
 	//remove the intruder from drawnIntrudersMap
-	drawnIntrudersMap->unsafe_erase(intruder->id);
+	drawnIntrudersMap.unsafe_erase(intruder->id);
 }
 
-void AcquireAircraftMenuHandlerCallback(void* inMenuRef,void* inItemRef)
-{
-	char FileName[256], AircraftPath[256];
-
-	if (!strcmp((char*)inItemRef, "Acquire Planes"))
-	{
-		AcquireAircraft();
-	}
-
-	if (!strcmp((char*)inItemRef, "Release Planes"))
-	{
-		XPLMReleasePlanes();
-	}
-
-	if (!strcmp((char*)inItemRef, "Load Aircraft"))
-	{
-		XPLMGetNthAircraftModel(XPLM_USER_AIRCRAFT, FileName, AircraftPath);
-		XPLMSetAircraftModel(1, AircraftPath);
-		XPLMSetAircraftModel(2, AircraftPath);
-		XPLMSetAircraftModel(3, AircraftPath);
-	}
-}
 
 void AcquireAircraft(void)
 {

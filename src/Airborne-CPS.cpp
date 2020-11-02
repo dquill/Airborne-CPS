@@ -291,6 +291,7 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc) {
 	transponder->initXBee(3);  // ******* get this value from the Menu ************
 	transponder->start();
 	intruderInstantiator = IntruderInstantiator::getIntruderInstatiator(&intrudingAircraft);
+	
 	return 1;
 }
 

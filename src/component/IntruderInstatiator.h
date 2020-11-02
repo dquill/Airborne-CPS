@@ -73,8 +73,9 @@ private:
 
 
 
-
-	concurrency::concurrent_unordered_map<std::string, Aircraft*>* drawnIntrudersMap;
+	// i think we want the actual drawnIntrudersMap to be in this class since no one outside the map needs it
+	concurrency::concurrent_unordered_map<std::string, Aircraft*> drawnIntrudersMap;  
+	
 	concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap;
 	IntruderInstantiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>*);
 

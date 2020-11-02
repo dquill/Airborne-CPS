@@ -214,7 +214,7 @@ DWORD Transponder::processIntruder(std::string intruderID)
 		return 0;
 	}
 
-	keepAliveMap_[intruder->id] = 10;  // what does 10 mean here? Why 10? 10 what? Why not 9 or 11000000? Magic number alert!
+	keepAliveMap_[intruder->id] = 10;  
 
 	ResolutionConnection* conn = (*openConnections)[intruder->id];
 
