@@ -65,7 +65,7 @@ IntruderInstantiator* IntruderInstantiator::getIntruderInstatiator() {
 int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
 {
 
-	//updateDrawnIntruders();
+	updateDrawnIntruders();
 	int planeCount;
 	//double x, y, z, x1, y1, z1;
 
@@ -180,7 +180,7 @@ void IntruderInstantiator::updateDrawnIntruders()
 	{
 		 
 		//if threat classification of aircraft >= TRAFFIC_ADVISORY
-		if (iter.second->threatClassification >= Aircraft::ThreatClassification::TRAFFIC_ADVISORY)
+		if (iter.second->threatClassification >= Aircraft::ThreatClassification::)
 		{
 			//look for the aircraft in drawnIntrudersMap
 			auto foundAircraft = drawnIntrudersMap.find(iter.first);

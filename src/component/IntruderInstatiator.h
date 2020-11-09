@@ -50,7 +50,7 @@ void AcquireAircraftMenuHandlerCallback(void* inMenuRef, void* inItemRef);
 void AcquireAircraft(void);
 void AcquireAircraftPlanesAvailableCallback(void* inRefcon);
 
-
+void updateDrawnIntrudersCallback();
 
 class IntruderInstantiator
 {
@@ -83,8 +83,8 @@ private:
 
 
 public:
-	static IntruderInstantiator* IntruderInstantiator::getIntruderInstatiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap);
-	static IntruderInstantiator* IntruderInstantiator::getIntruderInstatiator();
+	static IntruderInstantiator* getIntruderInstatiator(concurrency::concurrent_unordered_map<std::string, Aircraft*>* intrudersMap);
+	static IntruderInstantiator* getIntruderInstatiator();
 	int IntruderInstantiator::DrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon);
 	void IntruderInstantiator::AcquireAircraftMenuHandlerCallback(void* inMenuRef, void* inItemRef);
 	float IntruderInstantiator::AcquireAircraftFlightLoopCB(float elapsedMe, float elapsedSim, int counter, void* refcon);

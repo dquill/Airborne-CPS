@@ -24,6 +24,7 @@
 
 #include "component/VSpeedIndicatorGaugeRenderer.h"
 #include "data/Aircraft.h"
+#include "component/IntruderInstatiator.h"
 
 #define BROADCAST_PORT 21221
 #define MAC_LENGTH 18

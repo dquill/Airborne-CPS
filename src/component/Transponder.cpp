@@ -313,6 +313,7 @@ DWORD Transponder::keepalive()
 				intrudersMap->unsafe_erase(iter->first);
 				keepAliveMap_.unsafe_erase(iter->first);
 				openConnections->unsafe_erase(iter->first);
+				updateDrawnIntrudersCallback();
 			}
 		}
 		Sleep(1000);
