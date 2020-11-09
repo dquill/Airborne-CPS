@@ -142,7 +142,7 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 		glRotatef(Roll, 0.0, 0.0, -1.0);
 
 		// we need to keep track of an airplane index, not sure if this is the right way but lets try it
-		XPLMDrawAircraft(idx, (float)intruder->openGL_localx, (float)intruder->openGL_localy, (float)intruder->openGL_localz, Pitch, Roll, backAzimuth, drawFullPlane ? 1 : 0, &DrawState);
+		XPLMDrawAircraft(idx, (float)intruder->openGL_localx, (float)intruder->openGL_localy, (float)intruder->openGL_localz, Pitch, Roll, intruder->heading.toDegrees, drawFullPlane ? 1 : 0, &DrawState);
 		idx++;
 		if (idx > (planeCount - 1))
 			idx = 1;
@@ -180,7 +180,7 @@ void IntruderInstantiator::updateDrawnIntruders()
 	{
 		 
 		//if threat classification of aircraft >= TRAFFIC_ADVISORY
-		if (iter.second->threatClassification >= Aircraft::ThreatClassification::)
+		if (iter.second->threatClassification >= Aircraft::ThreatClassification::PROXIMITY_INTRUDER_TRAFFIC)
 		{
 			//look for the aircraft in drawnIntrudersMap
 			auto foundAircraft = drawnIntrudersMap.find(iter.first);
@@ -208,7 +208,7 @@ void IntruderInstantiator::updateDrawnIntruders()
 			//remove it from drawnIntrudersMap if it's not in intrudersMap
 			removeDrawnIntruder(iter->second);
 		}
-		else if (iter->second->threatClassification < Aircraft::ThreatClassification::TRAFFIC_ADVISORY)
+		else if (iter->second->threatClassification < Aircraft::ThreatClassification::PROXIMITY_INTRUDER_TRAFFIC)
 		{
 			//also remove it if its threat classification is < TRAFFIC_ADVISORY now
 			removeDrawnIntruder(iter->second);
