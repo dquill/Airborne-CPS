@@ -142,7 +142,7 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 		glRotatef(Roll, 0.0, 0.0, -1.0);
 
 		// we need to keep track of an airplane index, not sure if this is the right way but lets try it
-		XPLMDrawAircraft(idx, (float)intruder->openGL_localx, (float)intruder->openGL_localy, (float)intruder->openGL_localz, Pitch, Roll, intruder->heading.toDegrees, drawFullPlane ? 1 : 0, &DrawState);
+		XPLMDrawAircraft(idx, (float)intruder->openGL_localx, (float)intruder->openGL_localy, (float)intruder->openGL_localz, Pitch, Roll, intruder->heading.toDegrees(), drawFullPlane ? 1 : 0, &DrawState);
 		idx++;
 		if (idx > (planeCount - 1))
 			idx = 1;

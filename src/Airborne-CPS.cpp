@@ -54,12 +54,14 @@
 
 #include "XPWidgets.h"
 #include "XPStandardWidgets.h"
-
-#define XBEE_CONFIG_MENU	1
+#define II_CONFIG_MENU		2  // inItemRef for Intruder Instantator menu item
+#define XBEE_CONFIG_MENU	1  // inItemRef for XBee Configuration Menue
 #define MAX_DEVICE_PATH		200
 #define XB_INTRUCTIONS_NUMLINES    9
 #define XB_INSTRUCTIONS_LINELENGTH 50
 
+#define NUM_THREAT_CLASSES 4
+#define MAX_THREAT_CLASS_NAME_LENGTH 27
 /*
 * These variables are used in the toggling of gauges during the simulation.
 * Currently, there are two Gauges (NUMBER_OF_GAUGES) in development:
@@ -104,6 +106,17 @@ int menuContainerID;
 XPLMMenuID menuID;
 void MenuHandler(void*, void*);
 
+// Menu Delcarations for Intruder Instantiator
+XPWidgetID	IIWidget = NULL;  // XBeeWidget
+XPWidgetID	IIWindow = NULL;  // XBeeWindow
+XPWidgetID	IITextWidget[50] = { NULL }; // IITextWidget[50];
+XPWidgetID	IIInsctructionsWidget[NUM_THREAT_CLASSES] = { NULL };
+int gIIMenuItem; // flag to tells us if the xbee widget is being displayed
+
+void CreateIIWidget(int x1, int y1, int w, int h);
+int IIHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);
+int	IIThreathChoiceHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);
+
 // more Menu Declarations added for XBee
 XPWidgetID	XBeeWidget = NULL;  // XBeeWidget
 XPWidgetID	XBeeWindow = NULL;  // XBeeWindow
@@ -112,7 +125,6 @@ XPWidgetID	XBeeInsctructionsWidget[XB_INTRUCTIONS_NUMLINES] = { NULL };
 XPWidgetID	XBeeEnableRoutingCheckbox = NULL;
 int gXBeeMenuItem;  // flag to tell us if the xbee widget is being displayed
 
-void XBeeMenuHandler(void*, void*);  // XBeeMenuHandler
 void CreateXBeeWidget(int x1, int y1, int w, int h);  //CreateXBeeWidget
 int XBeeHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);  //XBeeHandler
 int	XBeePortNumHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);
@@ -132,6 +144,14 @@ char XBeeInstructionText[XB_INTRUCTIONS_NUMLINES][XB_INSTRUCTIONS_LINELENGTH] = 
 "end"
 
 };
+
+char TCAS_Threat_Classifications[NUM_THREAT_CLASSES][MAX_THREAT_CLASS_NAME_LENGTH] = {
+"NON_THREAT_TRAFFIC",
+"PROXIMITY_INTRUDER_TRAFFIC",
+"TRAFFIC_ADVISORY",
+"RESOLUTION_ADVISORY",
+};
+
 
 
 // This Global is used to activate hostile mode. This is TEMPORARY
@@ -227,10 +247,17 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc) {
 	XPLMAppendMenuItem(menuID, "Toggle Hostile", (void*)"hostileToggle", 1);
 	XPLMAppendMenuItem(menuID, "Toggle Debug", (void*)"debugToggle", 1);
 	XPLMAppendMenuItem(menuID, "XBee Config", (void*)XBEE_CONFIG_MENU, 1);
-	XPLMAppendMenuItem(menuID, "Draw Intruders", (void*)"Draw Intruders", 1);
-	XPLMAppendMenuItem(menuID, "Stop Drawing Intruders", (void*)"Stop Drawing Intruders", 1);
+	XPLMAppendMenuItem(menuID, "Draw Intruders Config", (void*)II_CONFIG_MENU, 1);
 
-	gXBeeMenuItem = 0;
+	
+	//XPLMAppendMenuItem(menuID, "Draw Intruders", (void*)"Draw Intruders", 1);
+	//XPLMAppendMenuItem(menuID, "Stop Drawing Intruders", (void*)"Stop Drawing Intruders", 1);
+
+
+	
+
+	gXBeeMenuItem = 0;  // set the two widget menu items as not being shown
+	gIIMenuItem = 0;
 
 	/*End of Plugin Menu Creation*/
 
@@ -295,25 +322,6 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc) {
 	return 1;
 }
 
-// The flight loop callback stuff is being stubborn. 
-// lets just see how good or bad it is if we 
-// do it all in the drawing callback.
-//XPLMRegisterFlightLoopCallback(DrawIntrudersFlightLoopCallback, 0.1, (void*)1);
-//
-//return 1;
-//}
-//
-//XPLMFlightLoop_f DrawIntrudersFlightLoopCallback(float inElapsedSinceLastCall,
-//												float inElapsedTimeSinceLastFlightLoop,
-//												int inCounter,
-//													void* inRefcon)  {
-//	IntruderInstantiator* ii_temp = IntruderInstantiator::getIntruderInstatiator();
-//	if (ii_temp != NULL) {
-//		ii_temp->updateDrawnIntruders();
-//		
-//	}
-//	return 1;
-//}
 
 PLUGIN_API void	XPluginStop(void) {
 	/// Clean up
@@ -610,7 +618,19 @@ void MenuHandler(void* in_menu_ref, void* in_item_ref) {
 				XPShowWidget(XBeeWidget);
 		}
 	}
-	if (!strcmp((char*)in_item_ref, "Draw Intruders"))
+	else if ((int)in_item_ref == II_CONFIG_MENU) 
+	{
+		if (gIIMenuItem == 0)
+		{
+			CreateIIWidget(50, 712, 700, 300);  //left, top, right, bottom
+			gIIMenuItem = 1;
+		}
+		else
+		{
+			if (!XPIsWidgetVisible(IIWidget))
+				XPShowWidget(IIWidget);
+		}
+	} else if (!strcmp((char*)in_item_ref, "Draw Intruders"))
 	{
 		AcquireAircraft();
 	}
@@ -620,6 +640,77 @@ void MenuHandler(void* in_menu_ref, void* in_item_ref) {
 		XPLMReleasePlanes();
 	}
 }
+
+//__________________________________________________________________
+
+// This will create our Intruder Instantiator dialog.
+void CreateIIWidget(int x, int y, int w, int h)
+{
+	int Index;
+
+	int x2 = x + w;
+	int y2 = y - h;
+
+
+	// Create the Main Widget window.
+	IIWidget = XPCreateWidget(x, y, x2, y2,
+		1,										// Visible
+		"Draw Intruders Configuration - SUNY Oswego",		// desc
+		1,										// is root
+		NULL,									// not in a container
+		xpWidgetClass_MainWindow);
+
+
+	// Add Close Box to the Main Widget.  Other options are available.  See the SDK Documentation.  
+	XPSetWidgetProperty(IIWidget, xpProperty_MainWindowHasCloseBoxes, 1);
+
+
+	// Print each line of instructions.
+	for (Index = 0; Index < NUM_THREAT_CLASSES; Index++)
+	{
+
+		// Create a text widget
+		IITextWidget[Index] = XPCreateWidget(x + 10, y - (30 + (Index * 20)), x + 40, y - (42 + (Index * 20)),
+			1,	// is Visible
+			TCAS_Threat_Classifications[Index],  // Threat Classification
+			0,		// not root
+			XBeeWidget,
+			xpWidgetClass_Button);
+		XPSetWidgetProperty(IITextWidget[Index], xpProperty_ButtonType, xpRadioButton);
+		XPSetWidgetProperty(IITextWidget[Index], xpProperty_ButtonBehavior, xpButtonBehaviorRadioButton);
+		XPAddWidgetCallback(IITextWidget[Index], (XPWidgetFunc_t)IIThreathChoiceHandler);
+	}
+
+
+	// Register our widget handler
+	XPAddWidgetCallback(XBeeWidget, (XPWidgetFunc_t)IIHandler);
+}
+
+//__________________________________________________________________
+
+
+int	IIThreathChoiceHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2) {
+
+	if (inMessage == xpMsg_ButtonStateChanged) {
+		for (int i = 0; i < NUM_THREAT_CLASSES; i++) {
+			if ((long)IITextWidget[i] != inParam1 && inParam2 == 1) {
+				XPSetWidgetProperty(IITextWidget[i], xpProperty_ButtonState, 0);
+			}
+			else if ((long)IITextWidget[i] == inParam1) {
+				char buf[100];
+				XPGetWidgetDescriptor(IITextWidget[i], buf, 100);
+
+			}
+
+		}
+		return 1;
+	}
+
+	return 0;
+}
+
+
+
 
 
 // This will create our widget dialog.
