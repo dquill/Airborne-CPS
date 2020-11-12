@@ -111,11 +111,11 @@ DWORD Transponder::receiveLocation()
 
 
 			try {
-				// ******** debugging
-				std::string debugString = "receiveLocation buffer: " + std::string(buffer) + "\n";
+				//// ******** debugging
+				//std::string debugString = "receiveLocation buffer: " + std::string(buffer) + "\n";
 
-				XPLMDebugString(debugString.c_str());
-				// ****************
+				//XPLMDebugString(debugString.c_str());
+				//// ****************
 				intruderLocation.deserialize(buffer, size);
 			}
 			catch (...) {

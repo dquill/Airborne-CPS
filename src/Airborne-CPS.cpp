@@ -54,14 +54,19 @@
 
 #include "XPWidgets.h"
 #include "XPStandardWidgets.h"
-#define II_CONFIG_MENU		2  // inItemRef for Intruder Instantator menu item
-#define XBEE_CONFIG_MENU	1  // inItemRef for XBee Configuration Menue
+
+// Menu Options
+#define XBEE_CONFIG_MENU		1  // inItemRef for XBee Configuration Menue
+#define II_CONFIG_MENU			2  // inItemRef for Intruder Instantator menu item
+#define DRAW_INTRUDERS			3  // temporary until the window widget gets working
+#define STOP_DRAWING_INTRUDERS	4  // temporary until the window widget gets working
+
 #define MAX_DEVICE_PATH		200
 #define XB_INTRUCTIONS_NUMLINES    9
 #define XB_INSTRUCTIONS_LINELENGTH 50
 
 #define NUM_THREAT_CLASSES 4
-#define MAX_THREAT_CLASS_NAME_LENGTH 27
+#define MAX_THREAT_CLASS_NAME_LENGTH 35
 /*
 * These variables are used in the toggling of gauges during the simulation.
 * Currently, there are two Gauges (NUMBER_OF_GAUGES) in development:
@@ -94,6 +99,7 @@ static XPLMWindowID	gExampleGaugePanelDisplayWindow = NULL;
 static int gaugeOnDisplay = 1;
 static bool debug = true;
 
+
 // Declares Hotkey Toggles
 static XPLMHotKeyID gExampleGaugeHotKey = NULL;
 static XPLMHotKeyID debugToggle = NULL;
@@ -111,11 +117,17 @@ XPWidgetID	IIWidget = NULL;  // XBeeWidget
 XPWidgetID	IIWindow = NULL;  // XBeeWindow
 XPWidgetID	IITextWidget[50] = { NULL }; // IITextWidget[50];
 XPWidgetID	IIInsctructionsWidget[NUM_THREAT_CLASSES] = { NULL };
+XPWidgetID	IIDrawingEnabledCheckbox = NULL;
 int gIIMenuItem; // flag to tells us if the xbee widget is being displayed
+bool EnableDrawingIntruders = false;
+
 
 void CreateIIWidget(int x1, int y1, int w, int h);
 int IIHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);
-int	IIThreathChoiceHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);
+int	IIThreatChoiceHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);
+
+int IIDrawingEnabledCheckboxHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2);
+
 
 // more Menu Declarations added for XBee
 XPWidgetID	XBeeWidget = NULL;  // XBeeWidget
@@ -146,10 +158,10 @@ char XBeeInstructionText[XB_INTRUCTIONS_NUMLINES][XB_INSTRUCTIONS_LINELENGTH] = 
 };
 
 char TCAS_Threat_Classifications[NUM_THREAT_CLASSES][MAX_THREAT_CLASS_NAME_LENGTH] = {
-"NON_THREAT_TRAFFIC",
-"PROXIMITY_INTRUDER_TRAFFIC",
-"TRAFFIC_ADVISORY",
-"RESOLUTION_ADVISORY",
+"   NON_THREAT_TRAFFIC",
+"   PROXIMITY_INTRUDER_TRAFFIC",
+"   TRAFFIC_ADVISORY",
+"   RESOLUTION_ADVISORY",
 };
 
 
@@ -176,7 +188,7 @@ IntruderInstantiator* intruderInstantiator;
 Decider* decider;
 
 /// Used for dragging plugin panel window.
-static	int	coordInRect(int x, int y, int l, int t, int r, int b);
+static int	coordInRect(int x, int y, int l, int t, int r, int b);
 static int	coordInRect(int x, int y, int l, int t, int r, int b) {
 	return ((x >= l) && (x < r) && (y < t) && (y >= b));
 }
@@ -250,11 +262,9 @@ PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc) {
 	XPLMAppendMenuItem(menuID, "Draw Intruders Config", (void*)II_CONFIG_MENU, 1);
 
 	
-	//XPLMAppendMenuItem(menuID, "Draw Intruders", (void*)"Draw Intruders", 1);
-	//XPLMAppendMenuItem(menuID, "Stop Drawing Intruders", (void*)"Stop Drawing Intruders", 1);
+	//XPLMAppendMenuItem(menuID, "Draw Intruders", (void*)DRAW_INTRUDERS, 1);
+	//XPLMAppendMenuItem(menuID, "Stop Drawing Intruders", (void*)STOP_DRAWING_INTRUDERS, 1);
 
-
-	
 
 	gXBeeMenuItem = 0;  // set the two widget menu items as not being shown
 	gIIMenuItem = 0;
@@ -605,8 +615,10 @@ int myHandleMouseClickCallback(XPLMWindowID inWindowID, int x, int y, XPLMMouseS
 
 void MenuHandler(void* in_menu_ref, void* in_item_ref) {
 
+	int menuSelection = (int)in_item_ref;
 
-	if ((int)in_item_ref == XBEE_CONFIG_MENU) {
+	switch (menuSelection) {
+	case XBEE_CONFIG_MENU :
 		if (gXBeeMenuItem == 0)
 		{
 			CreateXBeeWidget(50, 712, 700, 300);  //left, top, right, bottom
@@ -614,12 +626,13 @@ void MenuHandler(void* in_menu_ref, void* in_item_ref) {
 		}
 		else
 		{
-			if (!XPIsWidgetVisible(XBeeWidget))
+			if (!XPIsWidgetVisible(XBeeWidget)) {
 				XPShowWidget(XBeeWidget);
+			}
 		}
-	}
-	else if ((int)in_item_ref == II_CONFIG_MENU) 
-	{
+		break;
+
+	case II_CONFIG_MENU :
 		if (gIIMenuItem == 0)
 		{
 			CreateIIWidget(50, 712, 700, 300);  //left, top, right, bottom
@@ -630,15 +643,18 @@ void MenuHandler(void* in_menu_ref, void* in_item_ref) {
 			if (!XPIsWidgetVisible(IIWidget))
 				XPShowWidget(IIWidget);
 		}
-	} else if (!strcmp((char*)in_item_ref, "Draw Intruders"))
-	{
+		break;
+
+	case DRAW_INTRUDERS :
 		AcquireAircraft();
+		break;
+
+	case STOP_DRAWING_INTRUDERS :
+		XPLMReleasePlanes();
+		break;
+
 	}
 
-	if (!strcmp((char*)in_item_ref, "Stop Drawing Intruders"))
-	{
-		XPLMReleasePlanes();
-	}
 }
 
 //__________________________________________________________________
@@ -648,7 +664,10 @@ void CreateIIWidget(int x, int y, int w, int h)
 {
 	int Index;
 
+	// right side
 	int x2 = x + w;
+
+	// bottom - i could be wrong. correct this comment if so. could be top
 	int y2 = y - h;
 
 
@@ -664,32 +683,60 @@ void CreateIIWidget(int x, int y, int w, int h)
 	// Add Close Box to the Main Widget.  Other options are available.  See the SDK Documentation.  
 	XPSetWidgetProperty(IIWidget, xpProperty_MainWindowHasCloseBoxes, 1);
 
+	// Draw/Stop Drawing Checkbox
+	IIDrawingEnabledCheckbox = XPCreateWidget(x + 25, y - 25, x + 50, y - 50,
+		1, // visible
+		"      Enable Drawing Intruders",
+		0, // root
+		IIWidget,
+		xpWidgetClass_Button);
+	XPSetWidgetProperty(IIDrawingEnabledCheckbox, xpProperty_ButtonType, xpRadioButton);
+	XPSetWidgetProperty(IIDrawingEnabledCheckbox, xpProperty_ButtonBehavior, xpButtonBehaviorCheckBox);
+	XPSetWidgetProperty(IIDrawingEnabledCheckbox, xpProperty_ButtonState, EnableDrawingIntruders);
+	XPAddWidgetCallback(IIDrawingEnabledCheckbox, (XPWidgetFunc_t)IIDrawingEnabledCheckboxHandler);
 
 	// Print each line of instructions.
 	for (Index = 0; Index < NUM_THREAT_CLASSES; Index++)
 	{
 
-		// Create a text widget
-		IITextWidget[Index] = XPCreateWidget(x + 10, y - (30 + (Index * 20)), x + 40, y - (42 + (Index * 20)),
+		// Create a text widget                left ,   top   ,    right      , bottom
+		IITextWidget[Index] = XPCreateWidget(
+			x + 25, // left
+			y - (100 + (Index * 20)), // top
+			x + 50, // right
+			y - (112 + (Index * 20)), // bottom
 			1,	// is Visible
 			TCAS_Threat_Classifications[Index],  // Threat Classification
 			0,		// not root
-			XBeeWidget,
+			IIWidget,
 			xpWidgetClass_Button);
 		XPSetWidgetProperty(IITextWidget[Index], xpProperty_ButtonType, xpRadioButton);
 		XPSetWidgetProperty(IITextWidget[Index], xpProperty_ButtonBehavior, xpButtonBehaviorRadioButton);
-		XPAddWidgetCallback(IITextWidget[Index], (XPWidgetFunc_t)IIThreathChoiceHandler);
+		XPAddWidgetCallback(IITextWidget[Index], (XPWidgetFunc_t)IIThreatChoiceHandler);
 	}
 
 
 	// Register our widget handler
-	XPAddWidgetCallback(XBeeWidget, (XPWidgetFunc_t)IIHandler);
+	XPAddWidgetCallback(IIWidget, (XPWidgetFunc_t)IIHandler);
 }
 
 //__________________________________________________________________
 
+int IIDrawingEnabledCheckboxHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2) {
+	if (inMessage == xpMsg_ButtonStateChanged) {
+		EnableDrawingIntruders = inParam2;
+		if (EnableDrawingIntruders) {
+			AcquireAircraft();
+		}
+		else {
+			XPLMReleasePlanes();
+		}
+		return 1;
+	}
+	return 0;
+}
 
-int	IIThreathChoiceHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2) {
+int	IIThreatChoiceHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2) {
 
 	if (inMessage == xpMsg_ButtonStateChanged) {
 		for (int i = 0; i < NUM_THREAT_CLASSES; i++) {
@@ -709,6 +756,23 @@ int	IIThreathChoiceHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, lon
 	return 0;
 }
 
+int	IIHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2)
+{
+	std::string debugstring = "IIHandler Hit. gIIMenuItem = " + std::to_string(gIIMenuItem) + "inMessage: " + std::to_string(inMessage) + "\n";
+	XPLMDebugString(debugstring.c_str());
+
+	if (inMessage == xpMessage_CloseButtonPushed)
+	{
+		if (gIIMenuItem == 1)
+		{ 
+			XPHideWidget(IIWidget);
+		}
+		return 1;
+	}
+
+	return 0;
+}
+
 
 
 
@@ -721,7 +785,7 @@ void CreateXBeeWidget(int x, int y, int w, int h)
 	int x2 = x + w;
 	int y2 = y - h;
 	GenerateComPortList();
-
+	XPLMDebugString("\nCom Port list generated\n");
 	// Create the Main Widget window.
 	XBeeWidget = XPCreateWidget(x, y, x2, y2,
 		1,										// Visible
@@ -730,7 +794,7 @@ void CreateXBeeWidget(int x, int y, int w, int h)
 		NULL,									// not in a container
 		xpWidgetClass_MainWindow);
 
-
+	XPLMDebugString("XPCreateWidget Returned\n");
 	// Add Close Box to the Main Widget.  Other options are available.  See the SDK Documentation.  
 	XPSetWidgetProperty(XBeeWidget, xpProperty_MainWindowHasCloseBoxes, 1);
 
@@ -751,7 +815,7 @@ void CreateXBeeWidget(int x, int y, int w, int h)
 		XPSetWidgetProperty(XBeeTextWidget[Index], xpProperty_ButtonBehavior, xpButtonBehaviorRadioButton);
 		XPAddWidgetCallback(XBeeTextWidget[Index], (XPWidgetFunc_t)XBeePortNumHandler);
 	}
-
+	XPLMDebugString("Created Radio Buttons\n");
 	// Instructions section
 	// Print each line of instructions.
 	for (Index = 0; Index < 50; Index++)
@@ -768,6 +832,7 @@ void CreateXBeeWidget(int x, int y, int w, int h)
 
 	}
 
+	XPLMDebugString("Wrote Instructions\n");
 	// enable/disable routing checkbox
 	XBeeEnableRoutingCheckbox = XPCreateWidget(x + 25, y2 + 100, x + 65, y2 + 50,
 		1,	// Visible
@@ -780,9 +845,11 @@ void CreateXBeeWidget(int x, int y, int w, int h)
 	XPSetWidgetProperty (XBeeEnableRoutingCheckbox, xpProperty_ButtonState, transponder->enableXBeeRouting);
 	XPAddWidgetCallback(XBeeEnableRoutingCheckbox, (XPWidgetFunc_t)XBeeRoutingCheckboxHandler);
 
+	XPLMDebugString("Registered Handlers\n");
 
 	// Register our widget handler
 	XPAddWidgetCallback(XBeeWidget, (XPWidgetFunc_t)XBeeHandler);
+	XPLMDebugString("Registered CAllback\n");
 }
 
 int XBeeRoutingCheckboxHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2) {
@@ -817,6 +884,7 @@ int	XBeePortNumHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  i
 // This is our widget handler.  In this example we are only interested when the close box is pressed.
 int	XBeeHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long  inParam1, long  inParam2)
 {
+
 	if (inMessage == xpMessage_CloseButtonPushed)
 	{
 		if (gXBeeMenuItem == 1)

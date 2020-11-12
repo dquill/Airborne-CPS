@@ -1,7 +1,8 @@
 #include "IntruderInstatiator.h"
 
 char* gpIIAircraft[4];
-char gIIAircraftPath[4][256];
+char gIIAircraftPath[256];
+
 
 
 const double kFullPlaneDist = 5280.0 / 3.2 * 3.0;
@@ -26,6 +27,9 @@ IntruderInstantiator::IntruderInstantiator(concurrency::concurrent_unordered_map
 	//XPLMAppendMenuItem(gAcquireAircraftMenu, "Load Aircraft", "Load Aircraft", IGNOREDPARAMETER);
 
 	intrudersMap = imap;
+
+
+	//DrawingEnabled = false;
 
 	gLatitude = XPLMFindDataRef("sim/flightmodel/position/latitude");
 	gLongitude = XPLMFindDataRef("sim/flightmodel/position/longitude");
@@ -141,6 +145,7 @@ int IntruderInstantiator::DrawCallback (XPLMDrawingPhase inPhase, int inIsBefore
 		glRotatef(Pitch, 1.0, 0.0, 0.0);
 		glRotatef(Roll, 0.0, 0.0, -1.0);
 
+
 		// we need to keep track of an airplane index, not sure if this is the right way but lets try it
 		XPLMDrawAircraft(idx, (float)intruder->openGL_localx, (float)intruder->openGL_localy, (float)intruder->openGL_localz, Pitch, Roll, intruder->heading.toDegrees(), drawFullPlane ? 1 : 0, &DrawState);
 		idx++;
@@ -175,6 +180,7 @@ void updateDrawnIntrudersCallback() {
 
 void IntruderInstantiator::updateDrawnIntruders()
 {
+	
 	//iterate through intrudersMap
 	for (auto iter : *this->intrudersMap)
 	{
@@ -192,6 +198,8 @@ void IntruderInstantiator::updateDrawnIntruders()
 			}
 		}
 	}
+
+
 
 	//iterate through drawnIntrudersMap
 	for (auto iter = drawnIntrudersMap.cbegin(), next_iter = iter; iter != drawnIntrudersMap.cend();
@@ -234,21 +242,26 @@ void AcquireAircraft(void)
 {
 	int PlaneCount;
 	int Index;
-	char FileName[256], AircraftPath[256];
+	char FileName[256];
+	XPLMGetNthAircraftModel(XPLM_USER_AIRCRAFT, FileName, gIIAircraftPath);
 
 	XPLMCountAircraft(&PlaneCount, 0, 0);
 	if (PlaneCount > 1)
 	{
-		XPLMGetNthAircraftModel(XPLM_USER_AIRCRAFT, FileName, AircraftPath);
+		
 		for (Index = 1; Index < PlaneCount; Index++)
 		{	
-			strcpy(gIIAircraftPath[Index - 1], AircraftPath);
-			gpIIAircraft[Index - 1] = (char*)gIIAircraftPath[Index - 1];
+			gpIIAircraft[Index - 1] = (char*)gIIAircraftPath;
 		}
 		if (XPLMAcquirePlanes((char**)&gpIIAircraft, AcquireAircraftPlanesAvailableCallback, NULL))
 		{
 			OutputDebugString("Aircraft Acquired successfully\n");
 			XPLMDebugString("Aircraft Acquired successfully\n");
+
+			for (Index = 1; Index < PlaneCount; Index++)
+			{
+				XPLMSetAircraftModel(Index, gIIAircraftPath);
+			}
 		}
 		else
 		{

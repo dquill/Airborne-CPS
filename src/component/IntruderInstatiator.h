@@ -52,6 +52,8 @@ void AcquireAircraftPlanesAvailableCallback(void* inRefcon);
 
 void updateDrawnIntrudersCallback();
 
+
+
 class IntruderInstantiator
 {
 private:
