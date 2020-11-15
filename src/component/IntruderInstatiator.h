@@ -92,6 +92,7 @@ public:
 	float IntruderInstantiator::AcquireAircraftFlightLoopCB(float elapsedMe, float elapsedSim, int counter, void* refcon);
 	void IntruderInstantiator::AcquireAircraftPlanesAvailableCallback(void* inRefcon);
 	void IntruderInstantiator::AcquireAircraft(void);
+	void IntruderInstantiator::getThreatChoice(int threatClass);
 	void IntruderInstantiator::updateDrawnIntruders();
 	void IntruderInstantiator::addDrawnIntruder(Aircraft*);
 	void IntruderInstantiator::removeDrawnIntruder(Aircraft*);

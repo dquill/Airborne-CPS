@@ -3,6 +3,9 @@
 char* gpIIAircraft[4];
 char gIIAircraftPath[256];
 
+//user selection for which threat classification to start drawing intruders at
+Aircraft::ThreatClassification threatChoice;
+
 
 
 const double kFullPlaneDist = 5280.0 / 3.2 * 3.0;
@@ -178,6 +181,12 @@ void updateDrawnIntrudersCallback() {
 	}
 }
 
+//method that gets the chosen threat classification
+void IntruderInstantiator::getThreatChoice(int threatClass)
+{
+	threatChoice = (Aircraft::ThreatClassification)threatClass;
+}
+
 void IntruderInstantiator::updateDrawnIntruders()
 {
 	
@@ -185,8 +194,8 @@ void IntruderInstantiator::updateDrawnIntruders()
 	for (auto iter : *this->intrudersMap)
 	{
 		 
-		//if threat classification of aircraft >= TRAFFIC_ADVISORY
-		if (iter.second->threatClassification >= Aircraft::ThreatClassification::PROXIMITY_INTRUDER_TRAFFIC)
+		//if threat classification of aircraft >= threat classification we're drawing at
+		if (iter.second->threatClassification >= threatChoice)
 		{
 			//look for the aircraft in drawnIntrudersMap
 			auto foundAircraft = drawnIntrudersMap.find(iter.first);
@@ -216,9 +225,9 @@ void IntruderInstantiator::updateDrawnIntruders()
 			//remove it from drawnIntrudersMap if it's not in intrudersMap
 			removeDrawnIntruder(iter->second);
 		}
-		else if (iter->second->threatClassification < Aircraft::ThreatClassification::PROXIMITY_INTRUDER_TRAFFIC)
+		else if (iter->second->threatClassification < threatChoice)
 		{
-			//also remove it if its threat classification is < TRAFFIC_ADVISORY now
+			//also remove it if its threat classification is < threat classification we're drawing at now
 			removeDrawnIntruder(iter->second);
 		}
 
