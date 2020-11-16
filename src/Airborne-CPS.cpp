@@ -746,7 +746,8 @@ int	IIThreatChoiceHandler(XPWidgetMessage  inMessage, XPWidgetID  inWidget, long
 			else if ((long)IITextWidget[i] == inParam1) {
 				char buf[100];
 				XPGetWidgetDescriptor(IITextWidget[i], buf, 100);
-				intruderInstantiator->getThreatChoice(i);
+				int threatNum = NUM_THREAT_CLASSES - i;
+				intruderInstantiator->getThreatChoice(threatNum);
 			}
 
 		}

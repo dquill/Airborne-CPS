@@ -31,6 +31,7 @@ IntruderInstantiator::IntruderInstantiator(concurrency::concurrent_unordered_map
 
 	intrudersMap = imap;
 
+	threatChoice = Aircraft::ThreatClassification::PROXIMITY_INTRUDER_TRAFFIC;
 
 	//DrawingEnabled = false;
 
