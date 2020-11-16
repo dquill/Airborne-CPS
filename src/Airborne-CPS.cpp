@@ -713,6 +713,7 @@ void CreateIIWidget(int x, int y, int w, int h)
 		XPSetWidgetProperty(IITextWidget[Index], xpProperty_ButtonType, xpRadioButton);
 		XPSetWidgetProperty(IITextWidget[Index], xpProperty_ButtonBehavior, xpButtonBehaviorRadioButton);
 		XPAddWidgetCallback(IITextWidget[Index], (XPWidgetFunc_t)IIThreatChoiceHandler);
+		XPSetWidgetProperty(IITextWidget[2], xpProperty_ButtonState, 1);  // check the PROXIMITY_INTRUDER_TRAFFIC checkbox
 	}
 
 
